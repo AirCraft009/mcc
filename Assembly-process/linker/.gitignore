@@ -1,0 +1,4 @@
+*.xml
+*.mem
+/.idea/
+/.vscode/
