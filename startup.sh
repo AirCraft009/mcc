@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+
+go build -o "$BASEDIR/bin/mcc" -v "$BASEDIR/Assembler-main"
+
 BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 MCC="$BASEDIR/bin/mcc"
 

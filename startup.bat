@@ -1,6 +1,8 @@
 @echo off
 setlocal
 
+go build -o bin/mcc.exe -v ./Assembler-main
+
 set BASEDIR=%~dp0
 set MCC=%BASEDIR%bin\mcc.exe
 
