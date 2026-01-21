@@ -21,12 +21,10 @@ func main() {
 
 	inputFile := os.Args[1]
 
-	includes, err := linker.FindIncludes(inputFile)
+	includes, locations, err := linker.FindIncludes(inputFile)
 	if err != nil {
 		panic(err)
 	}
-	// zero'd array
-	locations := make([]uint16, len(includes))
 
 	linker.CompileAndLinkFiles(includes, locations, strings.Clone(*outPath), false)
 }

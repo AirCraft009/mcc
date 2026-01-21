@@ -7,15 +7,13 @@ import (
 	"strings"
 )
 
-const includeSignifier string = "#include"
-
 // FindIncludes
 // finds all include statements inside the file
 // only accepts includes at the start
 // after a line that isn't an include statement it returns\
 //
 // returns all unique include filepaths
-func FindIncludes(filePath string) (filePaths []string, e error) {
+func FindIncludes(filePath string) (filePaths []string, locations []uint16, e error) {
 	filePathSave := filePath
 	uniquePaths := helper.NewSet[string]()
 	nextPaths := helper.NewQueue[string]()
@@ -23,7 +21,7 @@ func FindIncludes(filePath string) (filePaths []string, e error) {
 	for filePath != "" {
 		file, err := os.ReadFile(filePath)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		dir := filepath.Dir(filePath)
 		stringData := string(file)
@@ -44,14 +42,22 @@ func FindIncludes(filePath string) (filePaths []string, e error) {
 		// "" if empty
 		filePath = nextPaths.Dequeue()
 	}
-
+	locations = make([]uint16, uniquePaths.Size()+1)
 	filePaths = make([]string, uniquePaths.Size()+1)
 	filePaths[0] = filePathSave
+	locations[0] = 0
 	for i, val := range uniquePaths.Get() {
-		filePaths[i+1] = val
-
+		dir := filepath.Dir(val)
+		if dir == "std" {
+			filePaths[i+1] = filepath.Join(filepath.Clean(stdLibLocation), filepath.Base(val))
+			locations[i+1] = ProgramStdLibStart
+		} else {
+			filePaths[i+1] = val
+			locations[i+1] = 0
+		}
 	}
-	return filePaths, nil
+
+	return filePaths, locations, nil
 }
 
 func fileExists(filename string) bool {
