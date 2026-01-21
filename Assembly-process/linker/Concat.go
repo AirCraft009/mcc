@@ -48,7 +48,7 @@ func FindIncludes(filePath string) (filePaths []string, locations []uint16, e er
 	locations[0] = 0
 	for i, val := range uniquePaths.Get() {
 		dir := filepath.Dir(val)
-		if dir == "std" {
+		if dir == stdLibLocation {
 			filePaths[i+1] = filepath.Join(filepath.Clean(stdLibLocation), filepath.Base(val))
 			locations[i+1] = ProgramStdLibStart
 		} else {
