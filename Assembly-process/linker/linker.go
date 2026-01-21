@@ -1,44 +1,52 @@
 package linker
 
 import (
-	"fmt"
-	assembler2 "mcc/Assembly-process/assembler"
+	"mcc/Assembly-process/assembler"
 	"mcc/helper"
 	"os"
 	"path/filepath"
-	"strings"
+	"strconv"
 )
 
-const (
-	outName    = "VM-bin"
-	objOutName = outName + "/ObjOut"
-	startaddr  = 0
-)
+// defineGlobalLookupTable
+//
+// parses the object files and puts all global labels
+// (labels with an underscore at the beginning)
+// and puts them into the GLT (Global Lookup Table)
+// there they're related from symbol to global position
+func defineGlobalLookupTable(objectFiles map[*assembler.ObjectFile]uint16) (globalLookupTable map[string]uint16) {
+	globalLookupTable = make(map[string]uint16)
 
-func LinkModules(filePaths map[string]uint16) (code []byte, debugLocations map[uint16]string, err error) {
-	//debug locations are only necesarry if the debugger is used can be discarded otherwise
-	finalCode := make([]byte, MemorySize)
-	globalLookupTable := make(map[string]uint16)
-	allObjFiles := make(map[*assembler2.ObjectFile]uint16)
-	debugLocations = make(map[uint16]string)
-
-	for filePath, location := range filePaths {
-		objFile, _ := assembler2.ReadObjectFile(filePath)
-		allObjFiles[objFile] = location
+	for objFile, location := range objectFiles {
 		for symbol, relAddr := range objFile.Symbols {
 			if objFile.Globals[relAddr] {
 				if _, ok := globalLookupTable[symbol]; ok {
-					panic("Duplicate Lbl names: " + symbol + " file: " + filePath)
+					panic("Duplicate Lbl names: " + symbol + " location: " + strconv.Itoa(int(location)))
 				}
 				globalLookupTable[symbol] = location + relAddr
 			}
 		}
 	}
-	for objFile, location := range allObjFiles {
+
+	return globalLookupTable
+}
+
+func LinkModules(objectFiles map[*assembler.ObjectFile]uint16, debug, objectResolution bool) (code []byte, debugLocations map[uint16]string, err error) {
+	//debug locations are only necesarry if the debugger is used can be discarded otherwise
+	finalCode := make([]byte, MemorySize)
+	if debug {
+		debugLocations = make(map[uint16]string)
+	}
+
+	globalLookupTable := defineGlobalLookupTable(objectFiles)
+
+	for objFile, location := range objectFiles {
 		for _, relo := range objFile.Relocs {
 			symbol, ok := objFile.Symbols[relo.Lbl]
+			// is the label in the local scope ?
 			if !ok {
 				globalSymbol, k := globalLookupTable[relo.Lbl]
+				// is the label global
 				if !k {
 					panic("Label not found: " + relo.Lbl)
 				}
@@ -46,84 +54,74 @@ func LinkModules(filePaths map[string]uint16) (code []byte, debugLocations map[u
 			} else {
 				symbol += location
 			}
-			debugLocations[symbol] = relo.Lbl
+			if debug {
+				debugLocations[symbol] = relo.Lbl
+			}
 			hi, lo := helper.EncodeAddr(symbol)
 			objFile.Code[relo.Offset] = hi
 			objFile.Code[relo.Offset+1] = lo
 		}
-		fmt.Println(len(objFile.Code))
 		finalCode = helper.ConcactSliceAtIndex(finalCode, objFile.Code, int(location))
+		if objectResolution {
+			//TODO: write the .obj next to the position of the .asm
+			//assembler.SaveObjectFile(objFile, )
+		}
 	}
 	return finalCode, debugLocations, nil
 }
 
-func CompileAndLinkFiles(files map[string]uint16, Name string) (code []byte, debugLocations map[uint16]string) {
+func CompileAndLinkFiles(files []string, originalLocations []uint16, outputPath string, debug bool) (code []byte, debugLocations map[uint16]string) {
 	//for now this funcion will recomplile all files
 	//It will take relative paths
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	genericOutPath := filepath.Join(wd, objOutName, Name)
 
-	objFiles := make(map[string]uint16)
+	objFiles := make(map[*assembler.ObjectFile]uint16)
 	locations := make(map[uint16]uint16)
-	for filePath, location := range files {
-		NewFilePath := filepath.Join(wd, filePath)
-		filePath = strings.ReplaceAll(filePath, ".asm", ".obj")
+	var obj *assembler.ObjectFile
+	var err error
 
-		data, err := os.ReadFile(NewFilePath)
-		if err != nil {
-			panic(err)
-		}
-		OutFilePath := filepath.Join(genericOutPath, filePath)
-		code := assembler2.Assemble(string(data), OutFilePath).Code
-		if value, ok := locations[location]; ok {
-			objFiles[OutFilePath] = location + value
-			locations[location] = uint16(len(code)) + value
+	for i := range len(files) {
+		file, location := files[i], originalLocations[i]
+
+		if filepath.Ext(file) == ".asm" {
+
+			data, err := os.ReadFile(file)
+			if err != nil {
+				panic(err)
+			}
+
+			obj = assembler.Assemble(string(data), "", false)
 		} else {
-			objFiles[OutFilePath] = location
+			// is already an object file or atleast not an asm file
+			obj, err = assembler.ReadObjectFile(file)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		// is location already used by another file
+		if value, ok := locations[location]; ok {
+			objFiles[obj] = location + value
+			locations[location] = uint16(len(code)) + value
+
+		} else {
+			objFiles[obj] = location
 			locations[location] = uint16(len(code))
 		}
+
 	}
 
-	LinkedCode, debugLocations, err := LinkModules(objFiles)
+	LinkedCode, debugLocations, err := LinkModules(objFiles, debug, false)
+
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
-	if Name == "" {
-		panic("Empty Name")
+	if outputPath == "" {
+		outputPath = "a.exe"
 	}
-	finalOutPath := filepath.Join(wd, outName, Name, "program.bin")
-	os.WriteFile(finalOutPath, LinkedCode, 0644)
+
+	err = os.WriteFile(outputPath, LinkedCode, 0644)
+	if err != nil {
+		panic(err.Error())
+	}
 	return LinkedCode, debugLocations
-}
-
-func setBasePaths(fileName string) map[string]uint16 {
-	paths := make(map[string]uint16, 6)
-	paths[fileName] = 0x00
-	paths["\\VM\\OS\\stdlib\\io.asm"] = ProgramStdLibStart
-	paths["\\VM\\OS\\stdlib\\math.asm"] = ProgramStdLibStart
-	paths["\\VM\\OS\\stdlib\\string.asm"] = ProgramStdLibStart
-	paths["\\VM\\OS\\stdlib\\sys.asm"] = ProgramStdLibStart
-	paths["\\VM\\OS\\stdlib\\utils.asm"] = ProgramStdLibStart
-	paths["\\VM\\OS\\interrupts\\interruptTable.asm"] = Interrupttable
-	paths["\\VM\\OS\\bootloader\\bootloader.asm"] = 500
-	paths["\\VM\\OS\\console\\console.asm"] = 500
-	paths["\\VM\\OS\\Renderer\\renderer.asm"] = 500
-	paths["\\VM\\OS\\scheduler\\scheduler.asm"] = 500
-	paths["\\VM\\OS\\helper\\helper.asm"] = 500
-	paths["\\VM\\OS\\console\\char-handler"] = 500
-	return paths
-}
-
-func CompileForOs(fileName, Name string) []byte {
-	paths := setBasePaths(fileName)
-	code, _ := CompileAndLinkFiles(paths, Name)
-	return code
-}
-
-func CompileForDebug(fileName, Name string) ([]byte, map[uint16]string) {
-	paths := setBasePaths(fileName)
-	return CompileAndLinkFiles(paths, Name)
 }

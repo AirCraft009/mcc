@@ -2,6 +2,7 @@ package main
 
 import (
 	"mcc/Assembly-process/linker"
+	"strings"
 
 	flag "github.com/spf13/pflag"
 )
@@ -12,7 +13,7 @@ import (
 
 func main() {
 	// define flags
-	_ = flag.String("o", "out.bin", "output file")
+	outPath := flag.String("o", "out.bin", "output file")
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: ./mcc inputFile -o outputfile\n")
 		return
@@ -20,8 +21,12 @@ func main() {
 
 	inputFile := os.Args[1]
 
-	_, err := linker.FindIncludes(inputFile)
+	includes, err := linker.FindIncludes(inputFile)
 	if err != nil {
 		panic(err)
 	}
+	// zero'd array
+	locations := make([]uint16, len(includes))
+
+	linker.CompileAndLinkFiles(includes, locations, strings.Clone(*outPath), false)
 }

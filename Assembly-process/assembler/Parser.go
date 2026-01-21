@@ -231,6 +231,9 @@ func parseFormatOPAddr(parameters []string, currPC uint16, parser *Parser) (pc u
 	return currPC, code, syntax
 }
 
+// parseFormatOPLbl
+// responsible for parsing
+// JMP LBL & similar
 func parseFormatOPLbl(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error) {
 	var rx, ry byte
 	code = make([]byte, 5)
@@ -352,7 +355,12 @@ func getOffset(OP string) (byte, bool) {
 	return offset, ok
 }
 
-func Assemble(data, path string) *ObjectFile {
+// Assemble
+// assembles string asm files\
+//
+// returns an Objectfile containing relocation information
+// & Code without resolved labels(0x0, 0x0)
+func Assemble(data, path string, write bool) *ObjectFile {
 	parsedData := ParseLines(data)
 	parser := newParser()
 	var formattedData [][]string
@@ -363,16 +371,19 @@ func Assemble(data, path string) *ObjectFile {
 	}
 
 	*/
-	ObjFile := SecondPass(formattedData, parser)
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
 
-	err = SaveObjectFile(ObjFile, f)
-	if err != nil {
-		panic(err)
+	ObjFile := SecondPass(formattedData, parser)
+	if write {
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = SaveObjectFile(ObjFile, f)
+		if err != nil {
+			panic(err)
+		}
 	}
 	return ObjFile
 }

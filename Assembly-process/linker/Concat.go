@@ -1,7 +1,6 @@
 package linker
 
 import (
-	"fmt"
 	"mcc/helper"
 	"os"
 	"path/filepath"
@@ -50,8 +49,8 @@ func FindIncludes(filePath string) (filePaths []string, e error) {
 	filePaths[0] = filePathSave
 	for i, val := range uniquePaths.Get() {
 		filePaths[i+1] = val
+
 	}
-	fmt.Println(filePaths)
 	return filePaths, nil
 }
 
