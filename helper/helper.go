@@ -49,3 +49,10 @@ func ConcactSliceAtIndex(dest, input []byte, index int) []byte {
 	}
 	return dest
 }
+
+func SatSubU32(a, b uint32) uint32 {
+	if a < b {
+		return 0
+	}
+	return a - b
+}

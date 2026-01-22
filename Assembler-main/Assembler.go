@@ -1,9 +1,7 @@
 package main
 
 import (
-	"mcc/Assembly-process/assembler"
-	"mcc/Assembly-process/linker"
-	"strings"
+	"mcc/Assembly-process/compiler"
 
 	flag "github.com/spf13/pflag"
 )
@@ -24,17 +22,15 @@ func main() {
 
 	inputFile := os.Args[1]
 	if *noLink {
-		file, err := os.ReadFile(inputFile)
-		if err != nil {
-			panic(err.Error())
-		}
-		assembler.Assemble(string(file), strings.Clone(*outPath), true)
+		compiler.NoLinking(inputFile, *outPath)
 		return
 	}
-	includes, locations, err := linker.FindIncludes(inputFile)
-	if err != nil {
-		panic(err)
-	}
 
-	linker.CompileAndLinkFiles(includes, locations, strings.Clone(*outPath), false)
+	fmt.Printf("Compiling %s\n", inputFile)
+	code, _ := compiler.NormalProcess(inputFile, false, false)
+	fmt.Println("only writing required")
+	err := os.WriteFile(*outPath, code, 0644)
+	if err != nil {
+		return
+	}
 }

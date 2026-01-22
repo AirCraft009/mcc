@@ -167,7 +167,7 @@ func formatString(parameters []string) (formatted [][]string) {
 	//ry = addr
 	rx = parameters[RegsLoc1]
 	ry = parameters[RegsLoc2]
-	inputStringParts := parameters[StrLoc:len(parameters)]
+	inputStringParts := parameters[StrLoc:]
 	if len(inputStringParts) == 0 {
 		return formatted
 	}

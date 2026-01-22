@@ -2,11 +2,18 @@ package linker
 
 import (
 	"errors"
+	"fmt"
+	"mcc/Assembly-process/assembler"
+	"mcc/helper"
 	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
+
+	"golang.org/x/sync/errgroup"
 )
+
+type fileType uint8
 
 const (
 	ObjectF = iota + 1
@@ -29,16 +36,36 @@ type Linkables struct {
 }
 
 type LinkFile struct {
-	Path  string
-	Data  []byte
-	FileT uint8
+	Path     string
+	Data     []byte
+	Location uint16
+	FileT    uint8
 }
 
 func NewLinkables(size int) *Linkables {
 	return &Linkables{make([]*LinkFile, size), 0, 0, true, sync.Mutex{}}
 }
 
-func (link *Linkables) AddFile(filePath string) (err error) {
+func (link *Linkables) AddArrays(filePaths []string, locations []uint16) error {
+	if len(filePaths) != len(locations) {
+		return errors.New("AddArrays did not receive the same number of files and locations")
+	}
+	var g errgroup.Group
+	for i := 0; i < len(filePaths); i++ {
+		file, location := filePaths[i], locations[i]
+
+		g.Go(func() error {
+			err := link.AddFile(file, location)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+	return g.Wait()
+}
+
+func (link *Linkables) AddFile(filePath string, location uint16) (err error) {
 	ext := filepath.Ext(filePath)
 	if !(acceptedFiletypes[ext] == 0) {
 		return errors.New("Unsupported file type: " + ext)
@@ -48,8 +75,9 @@ func (link *Linkables) AddFile(filePath string) (err error) {
 	if err != nil {
 		return err
 	}
+	fmt.Println("adding file")
 
-	linkF := &LinkFile{Path: filePath, Data: data, FileT: acceptedFiletypes[ext]}
+	linkF := &LinkFile{Path: filePath, Data: data, FileT: acceptedFiletypes[ext], Location: location}
 	link.mutex.Lock()
 	link.Files[link.ptr] = linkF
 	link.ptr++
@@ -63,7 +91,10 @@ func (link *Linkables) AddFile(filePath string) (err error) {
 // file may be nil
 func (link *Linkables) GetFile() (file *LinkFile, nonNil bool) {
 	link.mutex.Lock()
-	link.ptr--
+	if link.ptr == 0 {
+		return nil, false
+	}
+	link.ptr = helper.SatSubU32(link.ptr, 1)
 	file = link.Files[link.ptr]
 	link.mutex.Unlock()
 	return file, file != nil
@@ -102,4 +133,38 @@ func (link *Linkables) DisableWrite() {
 
 func (link *Linkables) SetPtr(val uint32) {
 	atomic.StoreUint32(&link.ptr, val)
+}
+
+func (link *Linkables) GetObjectFiles() (objectFiles map[*assembler.ObjectFile]uint16, err error) {
+	locations := make(map[uint16]uint16)
+	objFiles := make(map[*assembler.ObjectFile]uint16)
+
+	for _, file := range link.Files {
+		if file.FileT == HeaderF {
+			continue
+		}
+		var objFile *assembler.ObjectFile
+		if file.FileT == ObjectF {
+			objFile, err = assembler.FormatObjectFile(file.Data)
+			if err != nil {
+				return nil, err
+			}
+
+		} else {
+			objFile = assembler.Assemble(string(file.Data), "", false)
+		}
+
+		// is location already used by another file
+		if value, ok := locations[file.Location]; ok {
+			objFiles[objFile] = file.Location + value
+			locations[file.Location] = uint16(len(objFile.Code)) + value
+
+		} else {
+			objFiles[objFile] = file.Location
+			locations[file.Location] = uint16(len(objFile.Code))
+		}
+
+	}
+
+	return objFiles, nil
 }
