@@ -23,7 +23,7 @@ func NewPreProcesser() *PreProcesser {
 
 func (pre *PreProcesser) parseDefinitions(linkable *linker.Linkables) {
 	fmt.Println("Parsing definitions")
-	var wg sync.WaitGroup
+	var wg = &sync.WaitGroup{}
 	fmt.Println("setup waitgroup")
 	linkable.SetupDataGathering()
 	fmt.Println("setup Data")
@@ -38,11 +38,12 @@ func (pre *PreProcesser) parseDefinitions(linkable *linker.Linkables) {
 		}
 
 		fmt.Println("linkF-Headerfile:", linkF.FileT)
+		lf := linkF
 		wg.Add(1)
-		go func() {
+		go func(l *linker.LinkFile) {
 			defer wg.Done()
-			findDefinitions(linkF, pre)
-		}()
+			findDefinitions(l, pre)
+		}(lf)
 		linkF, nonNil = linkable.GetFile()
 	}
 	// only terminate after every goroutine is done
@@ -57,13 +58,14 @@ func findDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
 			continue
 		}
 
-		strings.TrimPrefix(line, "#define ")
+		line = strings.TrimPrefix(line, "#define ")
 		parts := strings.Split(strings.TrimSpace(line), ":")
 		if len(parts) != 2 {
 			fmt.Printf("Error parsing definition line:%s \nfile: %s \nreason: to many sperators ':'\n", line, linkF.Path)
 			continue
 		}
 		pre.mutex.Lock()
+		fmt.Println(parts)
 		pre.definitions = append(pre.definitions, definition{parts[0], parts[1]})
 		pre.mutex.Unlock()
 	}
@@ -71,20 +73,23 @@ func findDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
 
 func (pre *PreProcesser) ApplyDefinitions(linkable *linker.Linkables) {
 	// parseDefinitions should already have been called
+	linkable.SetupDataGathering()
 	linkF, nonNil := linkable.GetFile()
-	var wg sync.WaitGroup
-
+	var wg = &sync.WaitGroup{}
+	fmt.Println("setup waitgroup")
 	for nonNil {
+		fmt.Println("got file linkF:", linkF)
 		if linkF.FileT != linker.AsmF {
 			linkF, nonNil = linkable.GetFile()
 			continue
 		}
-
+		fmt.Println("got file linkF:", linkF.FileT)
+		lf := linkF
 		wg.Add(1)
-		go func() {
+		go func(l *linker.LinkFile) {
 			defer wg.Done()
-			replaceDefinitions(linkF, pre)
-		}()
+			replaceDefinitions(l, pre)
+		}(lf)
 
 		linkF, nonNil = linkable.GetFile()
 	}
@@ -97,6 +102,7 @@ func (pre *PreProcesser) Process(linkable *linker.Linkables) {
 	fmt.Println("finished parsing processor")
 	pre.ApplyDefinitions(linkable)
 	fmt.Println("finished applying definitions")
+	fmt.Println(string(linkable.Files[0].Data))
 }
 
 func replaceDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
@@ -104,4 +110,6 @@ func replaceDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
 	for _, definition := range pre.definitions {
 		stringData = strings.ReplaceAll(stringData, definition.placeHolder, definition.value)
 	}
+	linkF.Data = []byte(stringData)
+	fmt.Println(string(linkF.Data))
 }

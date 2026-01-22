@@ -26,7 +26,7 @@ func NormalProcess(inputFile string, debug, resolution bool) ([]byte, map[uint16
 	fmt.Println("includes:", includes)
 	link := linker.NewLinkables(len(includes))
 	fmt.Println("linker:", link)
-	err = link.AddArrays(includes, locations)
+	err = link.AddArraysMultiThreaded(includes, locations)
 	fmt.Println("added arrays: ", link)
 	if err != nil {
 		panic(err.Error())

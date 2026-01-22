@@ -22,9 +22,9 @@ const (
 )
 
 var acceptedFiletypes = map[string]byte{
-	"asm": AsmF,
-	"obj": ObjectF,
-	"h":   HeaderF,
+	".asm": AsmF,
+	".obj": ObjectF,
+	".h":   HeaderF,
 }
 
 type Linkables struct {
@@ -46,16 +46,26 @@ func NewLinkables(size int) *Linkables {
 	return &Linkables{make([]*LinkFile, size), 0, 0, true, sync.Mutex{}}
 }
 
-func (link *Linkables) AddArrays(filePaths []string, locations []uint16) error {
+// AddArraysMultiThreaded
+// sadly unusable - as it causes nondeterministic output by using goroutines
+func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []uint16) error {
+	//clears out anything should be empty anyway but who knows
+	link.Files = make([]*LinkFile, len(filePaths))
+	//force it to start adding at 0
+	link.ResetPtr()
+
 	if len(filePaths) != len(locations) {
 		return errors.New("AddArrays did not receive the same number of files and locations")
 	}
-	var g errgroup.Group
+
+	var g = &errgroup.Group{}
 	for i := 0; i < len(filePaths); i++ {
 		file, location := filePaths[i], locations[i]
 
+		f, l, j := file, location, i
+
 		g.Go(func() error {
-			err := link.AddFile(file, location)
+			err := link.AddFileMultiThreaded(f, l, j)
 			if err != nil {
 				return err
 			}
@@ -65,9 +75,9 @@ func (link *Linkables) AddArrays(filePaths []string, locations []uint16) error {
 	return g.Wait()
 }
 
-func (link *Linkables) AddFile(filePath string, location uint16) (err error) {
+func (link *Linkables) AddFileMultiThreaded(filePath string, location uint16, index int) (err error) {
 	ext := filepath.Ext(filePath)
-	if !(acceptedFiletypes[ext] == 0) {
+	if acceptedFiletypes[ext] == 0 {
 		return errors.New("Unsupported file type: " + ext)
 	}
 
@@ -75,8 +85,15 @@ func (link *Linkables) AddFile(filePath string, location uint16) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Println("adding file")
+	fmt.Println("addding file")
 
+	if index != 0 {
+		//block until previous index is filled now everything stays in order
+		for link.Files[index-1] == nil {
+			//do nothing
+		}
+	}
+	fmt.Printf("filetype: %s to %d\n", ext, acceptedFiletypes[ext])
 	linkF := &LinkFile{Path: filePath, Data: data, FileT: acceptedFiletypes[ext], Location: location}
 	link.mutex.Lock()
 	link.Files[link.ptr] = linkF
@@ -92,6 +109,7 @@ func (link *Linkables) AddFile(filePath string, location uint16) (err error) {
 func (link *Linkables) GetFile() (file *LinkFile, nonNil bool) {
 	link.mutex.Lock()
 	if link.ptr == 0 {
+		link.mutex.Unlock()
 		return nil, false
 	}
 	link.ptr = helper.SatSubU32(link.ptr, 1)

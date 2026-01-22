@@ -1,2 +1,2 @@
-#define Height 500
-#define Width 500
+#define Height:500
+#define Width:500
