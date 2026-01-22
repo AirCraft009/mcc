@@ -45,7 +45,10 @@ func ReadObjectFile(path string) (*ObjectFile, error) {
 	if err != nil {
 		return nil, err
 	}
+	return FormatObjectFile(data)
+}
 
+func FormatObjectFile(data []byte) (*ObjectFile, error) {
 	buf := bytes.NewReader(data)
 
 	header := make([]byte, 4)
