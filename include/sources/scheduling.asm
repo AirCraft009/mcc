@@ -1,3 +1,5 @@
+#include sys_location.h
+
 #ActiveTaskPtr = 9088
 #Task Start =  9089
 #Task len = 9149 buffer bit of 1'st task
@@ -14,16 +16,15 @@ _init_scheduler:
     CALL _get_task_len
     MOV T5 T6
     ADDI T5 1
-    CALL __get_active_task_location
+    MOVI T6 active_task_location
     STOREB T5 T6                    # store the len + 1 so it starts at index len()-1
     JMP _scheduler
 
 _setup_scheduler:
     CALL _get_active_task
     MOV T4 T6
-    CALL _get_task_start
-    MOV T3 T6
-    CALL _get_task_size
+    MOVI T3 task_start
+    MOVI T6 task_size
     RET
 
 _scheduler:
@@ -94,11 +95,11 @@ WRAP_ARROUND:
     MOV T4 T6
     ADDI T4 1
     PUSH T4
-    CALL _get_task_size
+    MOVI T6 task_size
     JMP ROUND_ROBIN
 
 FOUND_TASK:
-    CALL __get_active_task_location
+    MOVI T6 active_task_location
     STOREB T4 T6            # Set Active Task
     CALL CALC_PC_FOR_ACTIVE_TASK
     MOV T4 T1
@@ -173,7 +174,7 @@ MARK_TASK_AS_DELETED:
 
 SHORTEN_TASK:
     MOV T2 T6
-    CALL _get_task_len_pos
+    MOVI T6 task_len_pos
     SUBI T2 1
     STOREB T2 T6
     MOVI I2 0
@@ -188,7 +189,7 @@ CALC_PC_FOR_TASK:     # T1 has the task
     SUBI T1 1
     CALL _get_task_size
     MUL T1 T6
-    CALL _get_task_start
+    MOVI T6 task_start
     ADD T1 T6
     RET
 
@@ -218,9 +219,9 @@ SAVE_TASK:
     CALL _get_active_task
     SUBI T6 1
     MOV T5 T6           # save activeTaskNum
-    CALL _get_task_size
+    MOVI T6 task_size
     MUL T5 T6           # get the offset
-    CALL _get_task_start
+    MOVI T6 task_start
     ADD T5 T6           # set to correct addr
 
     POP T2              # when save_task is called from yield or interrupt this saves the return addr of it
@@ -282,7 +283,7 @@ FIND_NEXT_EMPTY_TASK_LOOP:
 
 UPDATE_LEN:
     ADDI T2 1
-    CALL _get_task_len_pos
+    MOVI T6 task_len_pos
     STOREB T2 T6
     SUBI T2 1
     MOV T5 T2
@@ -313,19 +314,16 @@ _spawn:         # creates a task and saves it
 
     CALL FIND_NEXT_EMPTY_TASK
 
-    CALL _get_task_size          # set- up PC
-    MUL T5 T6                   # where can we start to write offset
-    CALL _get_task_start
-    ADD T5 T6                   # actual start addr
+    MULI T5 task_size           # where can we start to write offset
+    ADDI T5 task_start          # actual start addr
     STOREW O1 T5                # store beginning of task
 
     ADDI T5 2                   # set- up Stack
-    CALL _get_split_stack_size
-    MOV T1 T6
+    MOVI T1 split_stack_size
     CALL _get_task_len
     SUBI T6 1
     MUL T1 T6
-    CALL _get_stack_start
+    MOVI T6 stack_start
     SUB T6 T1
     STOREW T6 T5
 

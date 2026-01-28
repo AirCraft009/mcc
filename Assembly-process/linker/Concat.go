@@ -1,6 +1,7 @@
 package linker
 
 import (
+	"fmt"
 	"mcc/helper"
 	"os"
 	"path/filepath"
@@ -19,19 +20,20 @@ func FindIncludes(filePath string) (filePaths []string, locations []uint16, e er
 	nextPaths := helper.NewQueue[string]()
 
 	for filePath != "" {
-		file, err := os.ReadFile(filePath)
+
+		data, err := os.ReadFile(handlePossibleStdlibFilepath(filePath))
 		if err != nil {
 			return nil, nil, err
 		}
 		dir := filepath.Dir(filePath)
-		stringData := string(file)
+		stringData := string(data)
 
 		for _, line := range strings.Split(stringData, "\n") {
 			line = strings.TrimSpace(line)
 			if !strings.HasPrefix(line, includeSignifier) {
 				break
 			}
-			// line should contain the relative path from the line file location to the include file
+			// line should contain the relative path from the line data location to the include data
 			line = strings.TrimSpace(strings.TrimPrefix(line, includeSignifier))
 			cleanedPath := filepath.Clean(filepath.Join(dir, line))
 			if !uniquePaths.IsExist(cleanedPath) {
@@ -42,14 +44,19 @@ func FindIncludes(filePath string) (filePaths []string, locations []uint16, e er
 		// "" if empty
 		filePath = nextPaths.Dequeue()
 	}
-	locations = make([]uint16, uniquePaths.Size()+1)
-	filePaths = make([]string, uniquePaths.Size()+1)
+	locations = make([]uint16, uniquePaths.Size()+2)
+	filePaths = make([]string, uniquePaths.Size()+2)
 	filePaths[0] = filePathSave
 	locations[0] = 0
+
 	for i, val := range uniquePaths.Get() {
 		dir := filepath.Dir(val)
+		fmt.Println("updating dir: ", dir)
 		if dir == stdLibLocation {
-			filePaths[i+1] = filepath.Join(filepath.Clean(stdLibLocation), filepath.Base(val))
+			fmt.Println("is std")
+			p := handlePossibleStdlibFilepath(val)
+			fmt.Println(p)
+			filePaths[i+1] = p
 			locations[i+1] = ProgramStdLibStart
 		} else {
 			filePaths[i+1] = val
@@ -57,13 +64,39 @@ func FindIncludes(filePath string) (filePaths []string, locations []uint16, e er
 		}
 	}
 
+	IncludeBase(&filePaths, &locations)
+
 	return filePaths, locations, nil
 }
 
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
+func IncludeBase(filePaths *[]string, locations *[]uint16) {
+	locationsDe := *locations
+	filepathsDe := *filePaths
+
+	rootPath := helper.GetRootPath()
+	tablePath := rootPath + includeLocationUse + "/interruptTable.obj"
+	taskPath := rootPath + includeLocationUse + "/scheduling.obj"
+	locationHeader := rootPath + includeLocationUse + "/sys_location.h"
+
+	locationsDe = append(locationsDe, InterrupttableLoc, 0x2381, 0)
+	filepathsDe = append(filepathsDe, tablePath, taskPath, locationHeader)
+
+}
+
+func IncludeHeaders() (filePaths []string, locations []uint16, e error) {
+	filePaths = make([]string, 0)
+	return filePaths, locations, nil
+}
+
+func handlePossibleStdlibFilepath(filename string) string {
+	dir := filepath.Dir(filename)
+	fmt.Println(filename)
+	if dir != stdLibLocation {
+		fmt.Println("not stdlib")
+		return filename
 	}
-	return !info.IsDir()
+
+	root := helper.GetRootPath()
+	file := filepath.Join(filepath.Join(root, stdLibLocationUse), filepath.Base(filename))
+	return file
 }

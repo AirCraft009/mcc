@@ -63,9 +63,9 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 		file, location := filePaths[i], locations[i]
 
 		f, l, j := file, location, i
-
+		fmt.Println("sent gothread:", i, file)
 		g.Go(func() error {
-			err := link.AddFileMultiThreaded(f, l, j)
+			err := link.addFileMultiThreaded(f, l, j)
 			if err != nil {
 				return err
 			}
@@ -75,7 +75,7 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 	return g.Wait()
 }
 
-func (link *Linkables) AddFileMultiThreaded(filePath string, location uint16, index int) (err error) {
+func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, index int) (err error) {
 	ext := filepath.Ext(filePath)
 	if acceptedFiletypes[ext] == 0 {
 		return errors.New("Unsupported file type: " + ext)
@@ -85,21 +85,14 @@ func (link *Linkables) AddFileMultiThreaded(filePath string, location uint16, in
 	if err != nil {
 		return err
 	}
-	fmt.Println("addding file")
 
-	if index != 0 {
-		//block until previous index is filled now everything stays in order
-		for link.Files[index-1] == nil {
-			//do nothing
-		}
-	}
-	fmt.Printf("filetype: %s to %d\n", ext, acceptedFiletypes[ext])
 	linkF := &LinkFile{Path: filePath, Data: data, FileT: acceptedFiletypes[ext], Location: location}
 	link.mutex.Lock()
-	link.Files[link.ptr] = linkF
+	link.Files[index] = linkF
 	link.ptr++
 	link.size++
 	link.mutex.Unlock()
+
 	return nil
 }
 
@@ -153,7 +146,7 @@ func (link *Linkables) SetPtr(val uint32) {
 	atomic.StoreUint32(&link.ptr, val)
 }
 
-func (link *Linkables) GetObjectFiles() (objectFiles map[*assembler.ObjectFile]uint16, err error) {
+func (link *Linkables) GetObjectFiles(outPath string, write bool) (objectFiles map[*assembler.ObjectFile]uint16, err error) {
 	locations := make(map[uint16]uint16)
 	objFiles := make(map[*assembler.ObjectFile]uint16)
 
@@ -169,7 +162,7 @@ func (link *Linkables) GetObjectFiles() (objectFiles map[*assembler.ObjectFile]u
 			}
 
 		} else {
-			objFile = assembler.Assemble(string(file.Data), "", false)
+			objFile = assembler.Assemble(string(file.Data), outPath, write)
 		}
 
 		// is location already used by another file

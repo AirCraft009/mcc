@@ -26,11 +26,12 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Compiling %s\n", inputFile)
 	code, _ := compiler.NormalProcess(inputFile, false, false)
-	fmt.Println("only writing required")
 	err := os.WriteFile(*outPath, code, 0644)
+
 	if err != nil {
-		return
+		panic(err.Error())
 	}
+
+	fmt.Println("successfully wrote to: ", *outPath)
 }

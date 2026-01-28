@@ -1,5 +1,10 @@
 package helper
 
+import (
+	"os"
+	"path/filepath"
+)
+
 func EncodeRegs(rx byte, ry byte, addrnecs bool) (byte, byte) {
 	var addrFlag byte
 	if addrnecs {
@@ -55,4 +60,18 @@ func SatSubU32(a, b uint32) uint32 {
 		return 0
 	}
 	return a - b
+}
+
+func GetRootPath() string {
+	exe, err := os.Executable()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	exe, err = filepath.EvalSymlinks(exe)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return filepath.Clean(filepath.Join(filepath.Dir(exe), "../"))
 }

@@ -22,22 +22,16 @@ func NewPreProcesser() *PreProcesser {
 }
 
 func (pre *PreProcesser) parseDefinitions(linkable *linker.Linkables) {
-	fmt.Println("Parsing definitions")
 	var wg = &sync.WaitGroup{}
-	fmt.Println("setup waitgroup")
 	linkable.SetupDataGathering()
-	fmt.Println("setup Data")
 	linkF, nonNil := linkable.GetFile()
 	for nonNil {
-		fmt.Println("got file linkF:", linkF)
-		fmt.Println("check Header link", linkF.FileT)
 		if linkF.FileT != linker.HeaderF {
-			fmt.Println("is not header ")
+
 			linkF, nonNil = linkable.GetFile()
 			continue
 		}
 
-		fmt.Println("linkF-Headerfile:", linkF.FileT)
 		lf := linkF
 		wg.Add(1)
 		go func(l *linker.LinkFile) {
@@ -51,9 +45,7 @@ func (pre *PreProcesser) parseDefinitions(linkable *linker.Linkables) {
 }
 
 func findDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
-	fmt.Println("finding definitions-goroutine")
 	for _, line := range strings.Split(string(linkF.Data), "\n") {
-		fmt.Println(line)
 		if !strings.HasPrefix(line, "#define ") {
 			continue
 		}
@@ -65,7 +57,6 @@ func findDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
 			continue
 		}
 		pre.mutex.Lock()
-		fmt.Println(parts)
 		pre.definitions = append(pre.definitions, definition{parts[0], parts[1]})
 		pre.mutex.Unlock()
 	}
@@ -76,14 +67,14 @@ func (pre *PreProcesser) ApplyDefinitions(linkable *linker.Linkables) {
 	linkable.SetupDataGathering()
 	linkF, nonNil := linkable.GetFile()
 	var wg = &sync.WaitGroup{}
-	fmt.Println("setup waitgroup")
+
 	for nonNil {
-		fmt.Println("got file linkF:", linkF)
+
 		if linkF.FileT != linker.AsmF {
 			linkF, nonNil = linkable.GetFile()
 			continue
 		}
-		fmt.Println("got file linkF:", linkF.FileT)
+
 		lf := linkF
 		wg.Add(1)
 		go func(l *linker.LinkFile) {
@@ -97,12 +88,10 @@ func (pre *PreProcesser) ApplyDefinitions(linkable *linker.Linkables) {
 }
 
 func (pre *PreProcesser) Process(linkable *linker.Linkables) {
-	fmt.Println("started pre processor")
+
 	pre.parseDefinitions(linkable)
-	fmt.Println("finished parsing processor")
 	pre.ApplyDefinitions(linkable)
-	fmt.Println("finished applying definitions")
-	fmt.Println(string(linkable.Files[0].Data))
+
 }
 
 func replaceDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
@@ -111,5 +100,5 @@ func replaceDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
 		stringData = strings.ReplaceAll(stringData, definition.placeHolder, definition.value)
 	}
 	linkF.Data = []byte(stringData)
-	fmt.Println(string(linkF.Data))
+
 }

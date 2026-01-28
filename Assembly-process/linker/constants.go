@@ -3,10 +3,10 @@ package linker
 const (
 	MemorySize         = 1024 * 16
 	ProgramStdLibStart = 0x1800
-	Interrupttable     = 23965
+	InterrupttableLoc  = 23965
 	includeSignifier   = "#include"
 	stdLibLocation     = "stdlib"
-	includeLocation    = "include"
+	includeLocation    = "/include"
 	stdLibLocationUse  = stdLibLocation + "/obj"
 	includeLocationUse = includeLocation + "/obj"
 )
