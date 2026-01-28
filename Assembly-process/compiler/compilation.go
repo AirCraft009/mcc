@@ -1,34 +1,40 @@
 package compiler
 
 import (
-	"mcc/Assembly-process/assembler"
+	"fmt"
 	"mcc/Assembly-process/linker"
-	pre_processor "mcc/Assembly-process/pre-processor"
-	"os"
-	"strings"
+	preprocessor "mcc/Assembly-process/pre-processor"
+	"strconv"
 )
 
 func NoLinking(inputFile, outPath string) {
-	file, err := os.ReadFile(inputFile)
-	if err != nil {
-		panic(err.Error())
-	}
 
-	locations := make([]uint16, 0)
-	includes := make([]string, 0)
-	linker.IncludeBase(&includes, &locations)
+	locations := make([]uint16, 1)
+	includes := make([]string, 1)
+
+	includes[0] = inputFile
+
+	linker.IncludeHeaders(&includes, &locations)
+	//fmt.Println(includes)
 	link := linker.NewLinkables(len(includes))
+	err := link.AddArraysMultiThreaded(includes, locations)
 
-	err = link.AddArraysMultiThreaded(includes, locations)
 	if err != nil {
 		panic(err.Error())
 	}
-	pre := pre_processor.NewPreProcesser()
+
+	pre := preprocessor.NewPreProcesser()
 	pre.Process(link)
-	_, err := link.GetObjectFiles(outPath, true)
+	objs, err := link.GetObjectFiles(outPath, true)
+
 	if err != nil {
 		panic(err.Error())
 	}
+	// files still get written is just marked
+	if len(objs) != 1 {
+		panic("Expected 1 object got " + strconv.Itoa(len(objs)))
+	}
+
 	return
 }
 
@@ -38,13 +44,18 @@ func NormalProcess(inputFile string, debug, resolution bool) ([]byte, map[uint16
 	if err != nil {
 		panic(err.Error())
 	}
+
+	fmt.Println(includes)
+
 	link := linker.NewLinkables(len(includes))
+	fmt.Println(includes)
 	err = link.AddArraysMultiThreaded(includes, locations)
+
 	if err != nil {
 		panic(err.Error())
 	}
 
-	pre := pre_processor.NewPreProcesser()
+	pre := preprocessor.NewPreProcesser()
 	// define etc
 	pre.Process(link)
 	objs, err := link.GetObjectFiles("", false)

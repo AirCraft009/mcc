@@ -33,7 +33,7 @@ func defineGlobalLookupTable(objectFiles map[*assembler.ObjectFile]uint16) (glob
 
 func LinkModules(objectFiles map[*assembler.ObjectFile]uint16, debug, objectResolution bool) (code []byte, debugLocations map[uint16]string, err error) {
 	//debug locations are only necesarry if the debugger is used can be discarded otherwise
-	finalCode := make([]byte, MemorySize)
+	finalCode := make([]byte, helper.MemorySize)
 	if debug {
 		debugLocations = make(map[uint16]string)
 	}

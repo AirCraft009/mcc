@@ -2,7 +2,6 @@ package linker
 
 import (
 	"errors"
-	"fmt"
 	"mcc/Assembly-process/assembler"
 	"mcc/helper"
 	"os"
@@ -58,12 +57,15 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 		return errors.New("AddArrays did not receive the same number of files and locations")
 	}
 
-	var g = &errgroup.Group{}
+	g := &errgroup.Group{}
+	//fmt.Println(len(filePaths))
+	//fmt.Println(filePaths)
 	for i := 0; i < len(filePaths); i++ {
 		file, location := filePaths[i], locations[i]
 
 		f, l, j := file, location, i
-		fmt.Println("sent gothread:", i, file)
+		//fmt.Println("sent gothread:", i, file)
+		//fmt.Println("adding file: ", f, i)
 		g.Go(func() error {
 			err := link.addFileMultiThreaded(f, l, j)
 			if err != nil {
@@ -77,7 +79,9 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 
 func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, index int) (err error) {
 	ext := filepath.Ext(filePath)
+
 	if acceptedFiletypes[ext] == 0 {
+		//fmt.Println("problem file: ", filePath, index)
 		return errors.New("Unsupported file type: " + ext)
 	}
 

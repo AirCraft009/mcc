@@ -13,7 +13,6 @@
 #define split_stack_size:910
 #define task_size:61        // real size 60, +1 for easier math
 
-#define active_task:9088
 #define active_task_location:9088
 
 #define task_start:9089
