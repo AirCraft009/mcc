@@ -1,4 +1,3 @@
-#include stdlib/sys_location.asm
 _printstr:
     PRINTSTR O2
     RET

@@ -1,8 +1,9 @@
 package linker
 
 import (
-	"mcc/Assembly-process/assembler"
-	"mcc/helper"
+	"mcc/internal/assembler"
+	helper2 "mcc/internal/helper"
+	"mcc/pkg"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,7 +15,7 @@ import (
 // (labels with an underscore at the beginning)
 // and puts them into the GLT (Global Lookup Table)
 // there they're related from symbol to global position
-func defineGlobalLookupTable(objectFiles map[*assembler.ObjectFile]uint16) (globalLookupTable map[string]uint16) {
+func defineGlobalLookupTable(objectFiles map[*pkg.ObjectFile]uint16) (globalLookupTable map[string]uint16) {
 	globalLookupTable = make(map[string]uint16)
 
 	for objFile, location := range objectFiles {
@@ -31,9 +32,9 @@ func defineGlobalLookupTable(objectFiles map[*assembler.ObjectFile]uint16) (glob
 	return globalLookupTable
 }
 
-func LinkModules(objectFiles map[*assembler.ObjectFile]uint16, debug, objectResolution bool) (code []byte, debugLocations map[uint16]string, err error) {
+func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, debug, objectResolution bool) (code []byte, debugLocations map[uint16]string, err error) {
 	//debug locations are only necesarry if the debugger is used can be discarded otherwise
-	finalCode := make([]byte, helper.MemorySize)
+	finalCode := make([]byte, helper2.MemorySize)
 	if debug {
 		debugLocations = make(map[uint16]string)
 	}
@@ -57,14 +58,14 @@ func LinkModules(objectFiles map[*assembler.ObjectFile]uint16, debug, objectReso
 			if debug {
 				debugLocations[symbol] = relo.Lbl
 			}
-			hi, lo := helper.EncodeAddr(symbol)
+			hi, lo := helper2.EncodeAddr(symbol)
 			objFile.Code[relo.Offset] = hi
 			objFile.Code[relo.Offset+1] = lo
 		}
-		finalCode = helper.ConcactSliceAtIndex(finalCode, objFile.Code, int(location))
+		finalCode = helper2.ConcactSliceAtIndex(finalCode, objFile.Code, int(location))
 		if objectResolution {
 			//TODO: write the .obj next to the position of the .asm
-			//assembler.SaveObjectFile(objFile, )
+			//pkg.SaveObjectFile(objFile, )
 		}
 	}
 	return finalCode, debugLocations, nil
@@ -74,9 +75,9 @@ func CompileAndLinkFiles(files []string, originalLocations []uint16, outputPath 
 	//for now this funcion will recomplile all files
 	//It will take relative paths
 
-	objFiles := make(map[*assembler.ObjectFile]uint16)
+	objFiles := make(map[*pkg.ObjectFile]uint16)
 	locations := make(map[uint16]uint16)
-	var obj *assembler.ObjectFile
+	var obj *pkg.ObjectFile
 	var err error
 
 	for i := range len(files) {
@@ -92,7 +93,7 @@ func CompileAndLinkFiles(files []string, originalLocations []uint16, outputPath 
 			obj = assembler.Assemble(string(data), "", false)
 		} else {
 			// is already an object file or atleast not an asm file
-			obj, err = assembler.ReadObjectFile(file)
+			obj, err = pkg.ReadObjectFile(file)
 			if err != nil {
 				panic(err)
 			}

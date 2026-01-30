@@ -2,8 +2,9 @@ package linker
 
 import (
 	"errors"
-	"mcc/Assembly-process/assembler"
-	"mcc/helper"
+	"mcc/internal/assembler"
+	"mcc/internal/helper"
+	"mcc/pkg"
 	"os"
 	"path/filepath"
 	"sync"
@@ -150,17 +151,17 @@ func (link *Linkables) SetPtr(val uint32) {
 	atomic.StoreUint32(&link.ptr, val)
 }
 
-func (link *Linkables) GetObjectFiles(outPath string, write bool) (objectFiles map[*assembler.ObjectFile]uint16, err error) {
+func (link *Linkables) GetObjectFiles(outPath string, write bool) (objectFiles map[*pkg.ObjectFile]uint16, err error) {
 	locations := make(map[uint16]uint16)
-	objFiles := make(map[*assembler.ObjectFile]uint16)
+	objFiles := make(map[*pkg.ObjectFile]uint16)
 
 	for _, file := range link.Files {
 		if file.FileT == HeaderF {
 			continue
 		}
-		var objFile *assembler.ObjectFile
+		var objFile *pkg.ObjectFile
 		if file.FileT == ObjectF {
-			objFile, err = assembler.FormatObjectFile(file.Data)
+			objFile, err = pkg.FormatObjectFile(file.Data)
 			if err != nil {
 				return nil, err
 			}

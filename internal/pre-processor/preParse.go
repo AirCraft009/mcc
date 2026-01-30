@@ -2,7 +2,7 @@ package pre_processor
 
 import (
 	"fmt"
-	"mcc/Assembly-process/linker"
+	"mcc/internal/linker"
 	"strings"
 	"sync"
 )

@@ -2,7 +2,8 @@ package assembler
 
 import (
 	"fmt"
-	"mcc/helper"
+	"mcc/internal/helper"
+	"mcc/pkg"
 	"os"
 	"strconv"
 	"strings"
@@ -25,31 +26,7 @@ type Parser struct {
 	Parsers   map[string]func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)
 	Formatter map[string]func(parameters []string) (formatted [][]string)
 	Labels    map[string]uint16
-	ObjFile   *ObjectFile
-}
-
-type ObjectFile struct {
-	Code    []byte
-	Symbols map[string]uint16
-	Relocs  []RelocationEntry
-	Globals map[uint16]bool
-	Entry   bool
-	Imports []string
-}
-
-type RelocationEntry struct {
-	Offset uint16 // Where in Code the label is called/JMP'd to
-	Lbl    string
-}
-
-func newObjectFile() *ObjectFile {
-	return &ObjectFile{
-		Code:    nil,
-		Symbols: make(map[string]uint16),
-		Relocs:  make([]RelocationEntry, 0),
-		Globals: make(map[uint16]bool),
-		Entry:   false,
-	}
+	ObjFile   *pkg.ObjectFile
 }
 
 func newParser() *Parser {
@@ -57,7 +34,7 @@ func newParser() *Parser {
 		Parsers:   make(map[string]func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)),
 		Formatter: make(map[string]func(parameters []string) (formatted [][]string)),
 		Labels:    make(map[string]uint16),
-		ObjFile:   newObjectFile(),
+		ObjFile:   pkg.NewObjectFile(),
 	}
 
 	parser.Parsers["NOP"] = parseFormatOP
@@ -251,7 +228,7 @@ func parseFormatOPLbl(parameters []string, currPC uint16, parser *Parser) (pc ui
 	*/
 	code[RegsLocOut], code[RegsLocOut+RegWidthOffset] = helper.EncodeRegs(rx, ry, true)
 	currPC += AddrOutLocHi
-	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, RelocationEntry{
+	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
 		Offset: currPC,
 		Lbl:    parameters[AddrLoc1],
 	})
@@ -268,7 +245,7 @@ func parseFormatOPRegLbl(parameters []string, currPC uint16, parser *Parser) (pc
 
 	code[RegsLocOut], code[RegsLocOut+RegWidthOffset] = helper.EncodeRegs(rx, ry, true)
 	currPC += AddrOutLocHi
-	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, RelocationEntry{
+	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
 		Offset: currPC,
 		Lbl:    parameters[AddrLoc2],
 	})
@@ -360,7 +337,7 @@ func getOffset(OP string) (byte, bool) {
 //
 // returns an Objectfile containing relocation information
 // & Code without resolved labels(0x0, 0x0)
-func Assemble(data, path string, write bool) *ObjectFile {
+func Assemble(data, path string, write bool) *pkg.ObjectFile {
 	parsedData := ParseLines(data)
 	parser := newParser()
 	var formattedData [][]string
@@ -380,7 +357,7 @@ func Assemble(data, path string, write bool) *ObjectFile {
 		}
 		defer f.Close()
 
-		err = SaveObjectFile(ObjFile, f)
+		err = pkg.SaveObjectFile(ObjFile, f)
 		if err != nil {
 			panic(err)
 		}
@@ -388,7 +365,7 @@ func Assemble(data, path string, write bool) *ObjectFile {
 	return ObjFile
 }
 
-func SecondPass(data [][]string, parser *Parser) (ObjFile *ObjectFile) {
+func SecondPass(data [][]string, parser *Parser) (ObjFile *pkg.ObjectFile) {
 	code := make([]byte, 0)
 
 	PC := uint16(0)

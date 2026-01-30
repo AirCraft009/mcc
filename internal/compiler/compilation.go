@@ -2,8 +2,8 @@ package compiler
 
 import (
 	"fmt"
-	"mcc/Assembly-process/linker"
-	preprocessor "mcc/Assembly-process/pre-processor"
+	"mcc/internal/linker"
+	preprocessor "mcc/internal/pre-processor"
 	"strconv"
 )
 

@@ -63,15 +63,18 @@ func SatSubU32(a, b uint32) uint32 {
 }
 
 func GetRootPath() string {
+	// get the exe path mcc/bin/mcc.exe
 	exe, err := os.Executable()
 	if err != nil {
 		panic(err.Error())
 	}
 
+	// hopefully clean up any symlinks
 	exe, err = filepath.EvalSymlinks(exe)
 	if err != nil {
 		panic(err.Error())
 	}
 
+	// go to mcc/
 	return filepath.Clean(filepath.Join(filepath.Dir(exe), "../"))
 }
