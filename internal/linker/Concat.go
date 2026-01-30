@@ -2,10 +2,11 @@ package linker
 
 import (
 	"fmt"
-	helper2 "mcc/internal/helper"
 	"os"
 	"path/filepath"
 	"strings"
+
+	helper2 "github.com/AirCraft009/mcc/internal/helper"
 )
 
 // FindIncludes

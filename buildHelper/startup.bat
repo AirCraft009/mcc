@@ -7,11 +7,11 @@ set BASEDIR=%~dp0\..
 set MCC=%BASEDIR%bin\mcc.exe
 
 :: ---- stdlib ----
-pushd "%BASEDIR%\lib\stdlib\sources"
+pushd "%BASEDIR%lib\stdlib\sources"
 
 for %%F in (*.asm) do (
     echo Compiling stdlib %%F
-    "%MCC%" "%%F" --o "%BASEDIR%\lib\stdlib\obj\%%~nF.obj" --no_link=true
+    "%MCC%" "%%F" --o "%BASEDIR%lib\stdlib\obj\%%~nF.obj" --no_link=true
 )
 
 popd

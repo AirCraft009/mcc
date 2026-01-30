@@ -2,11 +2,12 @@ package assembler
 
 import (
 	"fmt"
-	"mcc/internal/helper"
-	"mcc/pkg"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/AirCraft009/mcc/internal/helper"
+	"github.com/AirCraft009/mcc/pkg"
 )
 
 const (

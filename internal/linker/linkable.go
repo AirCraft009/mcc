@@ -2,13 +2,14 @@ package linker
 
 import (
 	"errors"
-	"mcc/internal/assembler"
-	"mcc/internal/helper"
-	"mcc/pkg"
 	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
+
+	"github.com/AirCraft009/mcc/internal/assembler"
+	"github.com/AirCraft009/mcc/internal/helper"
+	"github.com/AirCraft009/mcc/pkg"
 
 	"golang.org/x/sync/errgroup"
 )

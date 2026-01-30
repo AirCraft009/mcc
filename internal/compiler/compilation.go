@@ -2,9 +2,10 @@ package compiler
 
 import (
 	"fmt"
-	"mcc/internal/linker"
-	preprocessor "mcc/internal/pre-processor"
 	"strconv"
+
+	"github.com/AirCraft009/mcc/internal/linker"
+	preprocessor "github.com/AirCraft009/mcc/internal/pre-processor"
 )
 
 func NoLinking(inputFile, outPath string) {

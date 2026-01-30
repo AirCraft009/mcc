@@ -1,12 +1,13 @@
 package linker
 
 import (
-	"mcc/internal/assembler"
-	helper2 "mcc/internal/helper"
-	"mcc/pkg"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/AirCraft009/mcc/internal/assembler"
+	helper2 "github.com/AirCraft009/mcc/internal/helper"
+	"github.com/AirCraft009/mcc/pkg"
 )
 
 // defineGlobalLookupTable

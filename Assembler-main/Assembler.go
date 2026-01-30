@@ -1,12 +1,12 @@
 package main
 
 import (
-	"mcc/internal/compiler"
-	"mcc/pkg"
-
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/AirCraft009/mcc/internal/compiler"
+	"github.com/AirCraft009/mcc/pkg"
 )
 
 func main() {

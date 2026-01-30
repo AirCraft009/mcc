@@ -6,9 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mcc/internal/helper"
 	"os"
 	"sort"
+
+	"github.com/AirCraft009/mcc/internal/helper"
 )
 
 const MagicObject = "MXBO"

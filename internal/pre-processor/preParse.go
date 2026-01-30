@@ -2,9 +2,10 @@ package pre_processor
 
 import (
 	"fmt"
-	"mcc/internal/linker"
 	"strings"
 	"sync"
+
+	"github.com/AirCraft009/mcc/internal/linker"
 )
 
 type PreProcesser struct {
