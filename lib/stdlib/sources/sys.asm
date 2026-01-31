@@ -3,8 +3,8 @@
 #Writeable_Heap = 9629
 
 
-_alloc:                     # O2 is the ammount O1 will be the start
-                            # Allocates number of bytes*blocksize(16)
+_alloc:                      # O2 is the ammount O1 will be the start
+                             # Allocates number of bytes*blocksize(16)
     CALL _get_bitmap_start   # location of the bitmap first 128 bytes of heap
     MOV O3 O6
     CALL _get_bitmap_end
@@ -16,7 +16,7 @@ _alloc:                     # O2 is the ammount O1 will be the start
 
 
         LOADB O4 O3      # see if block is alr. set
-        CMPI O4 0       # if it's 0 then the space is free
+        CMPI O4 0        # if it's 0 then the space is free
         JNZ RESET_BITMAP_LOOP
 
         SUBI O2 1       # counter --
