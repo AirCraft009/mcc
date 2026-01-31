@@ -19,7 +19,7 @@
 
 ### sys functions
 
-- `_alloc`: allocates ammount(O2) blocks(16 B) the start is returned in O1
+- `_alloc`: allocates ammount(O2) blocks(16 B) the start is returned in O1 (0 if OOM)
 - `_free`: frees a block of memory O1 is the start of that Memory
 
 
