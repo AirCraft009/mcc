@@ -9,8 +9,8 @@ _print_char:
 
 _read_char:
     CLZ
-    CALL _getReadPtr
-    CALL _getWritePtr
+    MOVI O3 ReadPtr
+    MOVI O4 WritePtr
     LOADB O2 O3      #Read ptr
     LOADB O1 O4      #Write ptr
 

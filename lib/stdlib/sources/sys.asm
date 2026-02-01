@@ -5,13 +5,12 @@
 
 _alloc:                      # O2 is the ammount O1 will be the start
                              # Allocates number of bytes*blocksize(16)
-    CALL _get_bitmap_start   # location of the bitmap first 128 bytes of heap
-    MOV O3 O6
-    CALL _get_bitmap_end
-    MOV O5 O2               # Store O2 for RESET
+    MOVI O3 bitmap_start     # location of the bitmap first 128 bytes of heap
+    MOVI O6 bitmap_end
+    MOV O5 O2                # Store O2 for RESET
 
     ALLOC_BITMAP_LOOP:
-        CMPI O2 0
+        CMPI O2 0       # all blocks have been checked
         JZ ALLOCATE
 
 
@@ -29,14 +28,14 @@ _alloc:                      # O2 is the ammount O1 will be the start
 
     ALLOCATE:
         CALL RESET
-        SUB O3 O2
+        SUB O3 O2       #
+        MOVI O4 1       # Bitmap has to be set to one
         JMP ALLOCATE_LOOP
 
     ALLOCATE_LOOP:      # set all Bitmap Entries to 1 (full)
         CMPI O2 0
         JZ SUCCES_ALLOC
 
-        MOVI O4 1
         STOREB O4 O3    # set  to 1
 
         ADDI O3 1
@@ -58,11 +57,11 @@ _alloc:                      # O2 is the ammount O1 will be the start
         CLC
         CLZ
         CALL RESET
-        CALL _get_bitmap_start
+        MOVI O6 bitmap_start
         SUB O3 O2       # subtract ammount from O3 to get the start of the region in bitmap
         SUB O3 O6       # subtract the addr to get the offset in blocks
         MULI O3 16      # multiply with blocksize to get offset from heapstart in bytes
-        CALL _get_writeable_heap
+        MOVI O6 writeable_heap
         ADD O3 O6       # Add start of actually writeable heap. to get a ptr to the start
         STOREW O2 O3    # write the size to the first to bytes
         MOV O1 O3
@@ -78,12 +77,12 @@ _alloc:                      # O2 is the ammount O1 will be the start
 
 
 _free:  # frees a block of mem; O1 is the addr
-    CALL _get_writeable_heap
+    MOVI O6 writeable_heap
     SUBI O1 2           # go to len
     LOADW O2 O1         # get len
     SUB O1 O6        # get offset in bytes from heapStart
     DIVI O1 16          # divide by 16 to get offset in blocks
-    CALL _get_bitmap_start
+    MOVI O6 bitmap_start
     ADD O1 O6        # go to addr overlayed in Bitmap
     MOVI O3 0
     CALL FREE_LOOP

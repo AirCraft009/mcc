@@ -8,7 +8,7 @@ const (
 	StdLibLocation       = "stdlib"
 	StdlibLocationUse    = "lib/stdlib"
 	includeLocationUse   = "lib/include"
-	GlobalHeaderLocation = "lib/globalHeaders"
+	GlobalHeaderLocation = "/lib/globalHeaders"
 	StdLibLocationUse    = StdlibLocationUse + "/obj"
 	IncludeLocationUse   = includeLocationUse + "/obj"
 )
