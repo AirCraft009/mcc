@@ -91,7 +91,7 @@ func CompileAndLinkFiles(files []string, originalLocations []uint16, outputPath 
 				panic(err)
 			}
 
-			obj = assembler.Assemble(string(data), "", false)
+			obj = assembler.AssembleAndWrite(string(data), "", false)
 		} else {
 			// is already an object file or atleast not an asm file
 			obj, err = pkg.ReadObjectFile(file)

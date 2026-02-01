@@ -5,8 +5,6 @@ type ObjectFile struct {
 	Symbols map[string]uint16
 	Relocs  []RelocationEntry
 	Globals map[uint16]bool
-	Entry   bool
-	Imports []string
 }
 
 type RelocationEntry struct {
@@ -20,6 +18,5 @@ func NewObjectFile() *ObjectFile {
 		Symbols: make(map[string]uint16),
 		Relocs:  make([]RelocationEntry, 0),
 		Globals: make(map[uint16]bool),
-		Entry:   false,
 	}
 }

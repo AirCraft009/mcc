@@ -14,8 +14,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type fileType uint8
-
 const (
 	ObjectF = iota + 1
 	AsmF
@@ -168,7 +166,7 @@ func (link *Linkables) GetObjectFiles(outPath string, write bool) (objectFiles m
 			}
 
 		} else {
-			objFile = assembler.Assemble(string(file.Data), outPath, write)
+			objFile = assembler.AssembleAndWrite(string(file.Data), outPath, write)
 		}
 
 		// is location already used by another file
