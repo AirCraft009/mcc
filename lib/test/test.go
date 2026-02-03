@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"mcc/internal/linker"
+
+	"github.com/AirCraft009/mcc/internal/linker"
 )
 
 func findFileTest() error {

@@ -54,7 +54,7 @@ func findDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
 		line = strings.TrimPrefix(line, "#define ")
 		parts := strings.Split(strings.TrimSpace(line), ":")
 		if len(parts) != 2 {
-			fmt.Printf("Error parsing definition line:%s \nfile: %s \nreason: to many sperators ':'\n", line, linkF.Path)
+			fmt.Printf("MCC-Preprocessor Warning: Error parsing definition line:%s \nfile: %s \nreason: to many sperators ':'\n", line, linkF.Path)
 			continue
 		}
 		pre.mutex.Lock()

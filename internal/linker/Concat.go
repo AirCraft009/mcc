@@ -1,7 +1,6 @@
 package linker
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,7 +56,6 @@ func FindIncludes(filePath string) (filePaths []string, locations []uint16, e er
 		if dir == helper2.StdLibLocation {
 			//fmt.Println("is std")
 			p := handlePossibleStdlibFilepath(val)
-			fmt.Println(p)
 			filePaths[i+1] = p
 			locations[i+1] = helper2.ProgramStdLibStart
 		} else {
@@ -115,7 +113,6 @@ func IncludeHeaders(filePaths *[]string, locations *[]uint16) {
 
 func handlePossibleStdlibFilepath(filename string) string {
 	dir := filepath.Dir(filename)
-	fmt.Println(filename)
 	if dir != helper2.StdLibLocation {
 		//fmt.Println("not stdlib")
 		return filename

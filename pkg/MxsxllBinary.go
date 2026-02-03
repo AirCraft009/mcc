@@ -21,11 +21,7 @@ func SaveObjectFile(obj *ObjectFile, w io.Writer) error {
 	binary.Write(w, binary.LittleEndian, uint16(len(obj.Code)))
 	binary.Write(w, binary.LittleEndian, uint16(len(obj.Symbols)))
 	binary.Write(w, binary.LittleEndian, uint16(len(obj.Relocs)))
-	if obj.Entry {
-		w.Write([]byte{1})
-	} else {
-		w.Write([]byte{0})
-	}
+
 	w.Write(obj.Code)
 
 	for name, addr := range obj.Symbols {
@@ -70,13 +66,11 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 	var symbolCount uint16
 	var codeLen uint16
 	var relocCount uint16
-	var entryfile byte
 
 	//.Read reads from r in this case buf into arg2 so &codelen
 	binary.Read(buf, binary.LittleEndian, &codeLen)
 	binary.Read(buf, binary.LittleEndian, &symbolCount)
 	binary.Read(buf, binary.LittleEndian, &relocCount)
-	binary.Read(buf, binary.LittleEndian, &entryfile)
 
 	code := make([]byte, codeLen)
 	buf.Read(code)
@@ -115,7 +109,7 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 		relocs[i].Lbl = string(name)
 	}
 
-	return &ObjectFile{Code: code, Symbols: symbols, Relocs: relocs, Globals: globals, Entry: entryfile == 1}, nil
+	return &ObjectFile{Code: code, Symbols: symbols, Relocs: relocs, Globals: globals}, nil
 }
 
 func FormatMxBinary(code []byte, debugSymbols map[uint16]string, debug bool) (data []byte) {
@@ -141,13 +135,15 @@ func FormatMxBinary(code []byte, debugSymbols map[uint16]string, debug bool) (da
 	names := make([]string, 0, len(debugSymbols))
 	addresses := make([]int, 0, len(debugSymbols))
 
-	for addr, name := range debugSymbols {
-		names = append(names, name)
+	for addr, _ := range debugSymbols {
 		addresses = append(addresses, int(addr))
 	}
 
-	sort.Strings(names)
 	sort.Ints(addresses)
+
+	for _, addr := range addresses {
+		names = append(names, debugSymbols[uint16(addr)])
+	}
 
 	for i := range len(names) {
 		name := names[i]

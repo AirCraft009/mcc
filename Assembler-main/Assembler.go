@@ -15,20 +15,24 @@ func main() {
 	noLink := flag.Bool("n", false, "do not use linker\n overrides debug and res because no full file is created")
 	debug := flag.Bool("debug", false, "creates debug symbols")
 	resolution := flag.Bool("res", false, "creates the object files at in the dir next to eachother")
+	verbose := flag.Bool("v", false, "verbose output")
 
 	flag.Parse()
+	if *verbose {
+		fmt.Printf("Compiling %s to %s\n", *inputFile, *outPath)
+	}
 
 	if *noLink {
-		compiler.NoLinking(*inputFile, *outPath)
+		compiler.NoLinking(*inputFile, *outPath, *verbose)
 		return
 	}
 
-	code, debugSymbols := compiler.NormalProcess(*inputFile, *debug, *resolution)
+	code, debugSymbols := compiler.NormalProcess(*inputFile, *debug, *resolution, *verbose)
 	err := pkg.WriteMxBinary(*outPath, code, debugSymbols, *debug)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	fmt.Println("successfully wrote to: ", outPath)
+	fmt.Println("successfully wrote to: ", *outPath)
 	return
 }

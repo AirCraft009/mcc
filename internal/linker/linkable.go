@@ -2,6 +2,7 @@ package linker
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -65,7 +66,6 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 
 		f, l, j := file, location, i
 		//fmt.Println("sent gothread:", i, file)
-		//fmt.Println("adding file: ", f, i)
 		g.Go(func() error {
 			err := link.addFileMultiThreaded(f, l, j)
 			if err != nil {
@@ -79,8 +79,8 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 
 func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, index int) (err error) {
 	ext := filepath.Ext(filePath)
-
-	if acceptedFiletypes[ext] == 0 {
+	fileT := acceptedFiletypes[ext]
+	if fileT == 0 {
 		//fmt.Println("problem file: ", filePath, index)
 		return errors.New("Unsupported file type: " + ext)
 	}
@@ -150,11 +150,15 @@ func (link *Linkables) SetPtr(val uint32) {
 	atomic.StoreUint32(&link.ptr, val)
 }
 
-func (link *Linkables) GetObjectFiles(outPath string, write bool) (objectFiles map[*pkg.ObjectFile]uint16, err error) {
+func (link *Linkables) GetObjectFiles(outPath string, write, verbose bool) (objectFiles map[*pkg.ObjectFile]uint16, err error) {
 	locations := make(map[uint16]uint16)
 	objFiles := make(map[*pkg.ObjectFile]uint16)
 
 	for _, file := range link.Files {
+		if verbose {
+			fmt.Printf("Handling file %s\n", file.Path)
+		}
+
 		if file.FileT == HeaderF {
 			continue
 		}

@@ -8,7 +8,7 @@ import (
 	preprocessor "github.com/AirCraft009/mcc/internal/pre-processor"
 )
 
-func NoLinking(inputFile, outPath string) {
+func NoLinking(inputFile, outPath string, verbose bool) {
 
 	locations := make([]uint16, 1)
 	includes := make([]string, 1)
@@ -16,7 +16,9 @@ func NoLinking(inputFile, outPath string) {
 	includes[0] = inputFile
 
 	linker.IncludeHeaders(&includes, &locations)
-	//fmt.Println(includes)
+	if verbose {
+		fmt.Println("collected includes: ", includes)
+	}
 	link := linker.NewLinkables(len(includes))
 	err := link.AddArraysMultiThreaded(includes, locations)
 
@@ -26,7 +28,7 @@ func NoLinking(inputFile, outPath string) {
 
 	pre := preprocessor.NewPreProcesser()
 	pre.Process(link)
-	objs, err := link.GetObjectFiles(outPath, true)
+	objs, err := link.GetObjectFiles(outPath, true, verbose)
 
 	if err != nil {
 		panic(err.Error())
@@ -39,18 +41,29 @@ func NoLinking(inputFile, outPath string) {
 	return
 }
 
-func NormalProcess(inputFile string, debug, resolution bool) ([]byte, map[uint16]string) {
+func NormalProcess(inputFile string, debug, resolution, verbose bool) ([]byte, map[uint16]string) {
+	if verbose {
+		fmt.Println("starting linking assembly")
+		fmt.Println("finding includes")
+	}
 	includes, locations, err := linker.FindIncludes(inputFile)
 
 	if err != nil {
 		panic(err.Error())
 	}
-
-	fmt.Println(includes)
+	if verbose {
+		fmt.Println("collected includes: ", includes)
+	}
 
 	link := linker.NewLinkables(len(includes))
-	fmt.Println(includes)
+	if verbose {
+		fmt.Println("Adding files to linker")
+	}
 	err = link.AddArraysMultiThreaded(includes, locations)
+
+	if verbose {
+		fmt.Println("Successfully added files to linker")
+	}
 
 	if err != nil {
 		panic(err.Error())
@@ -58,12 +71,26 @@ func NormalProcess(inputFile string, debug, resolution bool) ([]byte, map[uint16
 
 	pre := preprocessor.NewPreProcesser()
 	// define etc
+	if verbose {
+		fmt.Println("starting preprocessing")
+	}
+
 	pre.Process(link)
-	objs, err := link.GetObjectFiles("", false)
+
+	if verbose {
+		fmt.Println("finished preprocessing")
+		fmt.Println("Assembling into Object Files")
+	}
+	objs, err := link.GetObjectFiles("", false, verbose)
+
 	if err != nil {
 		panic(err.Error())
 	}
-	code, debugLabels, err := linker.LinkModules(objs, debug, resolution)
+	if verbose {
+		fmt.Println("Successfully made Object Files")
+		fmt.Println("Starting linking")
+	}
+	code, debugLabels, err := linker.LinkModules(objs, debug, resolution, verbose)
 	if err != nil {
 		panic(err.Error())
 	}
