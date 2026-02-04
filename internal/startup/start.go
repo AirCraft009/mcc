@@ -15,13 +15,14 @@ func NoLinking(inputFile, outPath string, verbose bool) {
 	includes := make([]string, 1)
 
 	includes[0] = inputFile
+	fileSysHelper := mcc.InitFSHelper()
 
 	linker.IncludeHeaders(&includes, &locations)
 	if verbose {
 		fmt.Println("collected includes: ", includes)
 	}
 	link := linker.NewLinkables(len(includes))
-	err := link.AddArraysMultiThreaded(includes, locations)
+	err := link.AddArraysMultiThreaded(includes, locations, fileSysHelper)
 
 	if err != nil {
 		panic(err.Error())
@@ -51,6 +52,7 @@ func NormalProcess(inputFile string, debug, resolution, verbose bool) ([]byte, m
 	includes, locations, err := linker.FindIncludes(inputFile, fileSysHelper)
 
 	if err != nil {
+		fileSysHelper.OutputVirtualFS()
 		panic(err.Error())
 	}
 	if verbose {
@@ -61,22 +63,18 @@ func NormalProcess(inputFile string, debug, resolution, verbose bool) ([]byte, m
 	if verbose {
 		fmt.Println("Adding files to linker")
 	}
-	err = link.AddArraysMultiThreaded(includes, locations)
-
-	if verbose {
-		fmt.Println("Successfully added files to linker")
-	}
+	err = link.AddArraysMultiThreaded(includes, locations, fileSysHelper)
 
 	if err != nil {
 		panic(err.Error())
 	}
 
-	pre := preprocessor.NewPreProcesser()
-	// define etc
 	if verbose {
+		fmt.Println("Successfully added files to linker")
 		fmt.Println("starting preprocessing")
 	}
 
+	pre := preprocessor.NewPreProcesser()
 	pre.Process(link)
 
 	if verbose {
