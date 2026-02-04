@@ -30,6 +30,10 @@ func FindIncludes(filePath string, fsHelp *mcc.FSHelper) (filePaths []string, lo
 		stringData := string(data)
 
 		for _, line := range strings.Split(stringData, "\n") {
+			if !strings.HasPrefix(line, helper.IncludeSignifier) {
+				continue
+			}
+
 			line = strings.TrimSpace(line)
 			// line should contain the relative path from the line data location to the include data
 			line = strings.TrimSpace(strings.TrimPrefix(line, helper.IncludeSignifier))
@@ -47,6 +51,10 @@ func FindIncludes(filePath string, fsHelp *mcc.FSHelper) (filePaths []string, lo
 	filePaths = make([]string, uniquePaths.Size()+1)
 	filePaths[0] = filePathSave
 
+	for i, val := range uniquePaths.Get() {
+		filePaths[i+1] = val
+	}
+
 	includeBaseComponents(&filePaths, &locations)
 
 	return filePaths, locations, nil
@@ -63,13 +71,15 @@ func includeBaseComponents(filePaths *[]string, locations *[]uint16) {
 	filepathsDe := *filePaths
 
 	rootPath := helper.GetRootPath()
-	tablePath := rootPath + helper.IncludeLocationUse + "/interruptTable.obj"
-	taskPath := rootPath + helper.IncludeLocationUse + "/scheduling.obj"
+	tablePath := filepath.Join(rootPath, filepath.Join(helper.IncludeLocationUse, "/interruptTable.obj"))
+	taskPath := filepath.Join(rootPath, filepath.Join(helper.IncludeLocationUse, "/scheduling.obj"))
 	IncludeHeaders(filePaths, locations)
 
 	locationsDe = append(locationsDe, helper.InterrupttableLoc, 0)
 	filepathsDe = append(filepathsDe, tablePath, taskPath)
 
+	*locations = locationsDe
+	*filePaths = filepathsDe
 }
 
 // IncludeHeaders
