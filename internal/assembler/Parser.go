@@ -1,3 +1,6 @@
+// Package assembler
+//
+// Handles Assembling the .asm files into object files
 package assembler
 
 import (
@@ -85,6 +88,12 @@ func (parser *Parser) SecondPass(data [][]string) (ObjFile *pkg.ObjectFile) {
 	return parser.ObjFile
 }
 
+// Assemble
+//
+// assembles a .asm files (data) into an objectfile
+// That conatins The bytecode with non relocated labels
+// It first parses all lables to relocate,
+// then finishes compiling into bytecode
 func Assemble(data string) *pkg.ObjectFile {
 	parsedData := ParseLines(data)
 	parser := newParser()
