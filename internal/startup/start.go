@@ -1,9 +1,10 @@
-package compiler
+package startup
 
 import (
 	"fmt"
 	"strconv"
 
+	"github.com/AirCraft009/mcc"
 	"github.com/AirCraft009/mcc/internal/linker"
 	preprocessor "github.com/AirCraft009/mcc/internal/pre-processor"
 )
@@ -46,7 +47,8 @@ func NormalProcess(inputFile string, debug, resolution, verbose bool) ([]byte, m
 		fmt.Println("starting linking assembly")
 		fmt.Println("finding includes")
 	}
-	includes, locations, err := linker.FindIncludes(inputFile)
+	fileSysHelper := mcc.InitFSHelper()
+	includes, locations, err := linker.FindIncludes(inputFile, fileSysHelper)
 
 	if err != nil {
 		panic(err.Error())

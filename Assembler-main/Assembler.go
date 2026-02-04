@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/AirCraft009/mcc/internal/compiler"
+	"github.com/AirCraft009/mcc/internal/startup"
 	"github.com/AirCraft009/mcc/pkg"
 )
 
@@ -23,11 +23,11 @@ func main() {
 	}
 
 	if *noLink {
-		compiler.NoLinking(*inputFile, *outPath, *verbose)
+		startup.NoLinking(*inputFile, *outPath, *verbose)
 		return
 	}
 
-	code, debugSymbols := compiler.NormalProcess(*inputFile, *debug, *resolution, *verbose)
+	code, debugSymbols := startup.NormalProcess(*inputFile, *debug, *resolution, *verbose)
 	err := pkg.WriteMxBinary(*outPath, code, debugSymbols, *debug)
 	if err != nil {
 		panic(err.Error())

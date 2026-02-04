@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	helper2 "github.com/AirCraft009/mcc/internal/helper"
+	"github.com/AirCraft009/mcc"
+	"github.com/AirCraft009/mcc/internal/helper"
 )
 
 // FindIncludes
@@ -14,14 +15,14 @@ import (
 // after a line that isn't an include statement it returns\
 //
 // returns all unique include filepaths
-func FindIncludes(filePath string) (filePaths []string, locations []uint16, e error) {
+func FindIncludes(filePath string, fsHelp *mcc.FSHelper) (filePaths []string, locations []uint16, e error) {
 	filePathSave := filePath
-	uniquePaths := helper2.NewSet[string]()
-	nextPaths := helper2.NewQueue[string]()
+	uniquePaths := helper.NewSet[string]()
+	nextPaths := helper.NewQueue[string]()
 
 	for filePath != "" {
 
-		data, err := os.ReadFile(handlePossibleStdlibFilepath(filePath))
+		data, err := fsHelp.ResolveReadFile(filePath)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -31,61 +32,55 @@ func FindIncludes(filePath string) (filePaths []string, locations []uint16, e er
 		for _, line := range strings.Split(stringData, "\n") {
 			line = strings.TrimSpace(line)
 			// line should contain the relative path from the line data location to the include data
-			line = strings.TrimSpace(strings.TrimPrefix(line, helper2.IncludeSignifier))
+			line = strings.TrimSpace(strings.TrimPrefix(line, helper.IncludeSignifier))
 			cleanedPath := filepath.Clean(filepath.Join(dir, line))
 			if !uniquePaths.IsExist(cleanedPath) {
 				nextPaths.Enqueue(cleanedPath)
 				uniquePaths.Add(cleanedPath)
 			}
 		}
-		// "" if empty
+		// Dequeue == "" if nextPaths is empty
 		filePath = nextPaths.Dequeue()
 	}
 	// add 1 to leave space for filePaths[0] = filePathsSave
 	locations = make([]uint16, uniquePaths.Size()+1)
 	filePaths = make([]string, uniquePaths.Size()+1)
 	filePaths[0] = filePathSave
-	locations[0] = 0
 
-	for i, val := range uniquePaths.Get() {
-		dir := filepath.Dir(val)
-		//fmt.Println("updating dir: ", dir)
-		if dir == helper2.StdLibLocation {
-			//fmt.Println("is std")
-			p := handlePossibleStdlibFilepath(val)
-			filePaths[i+1] = p
-			locations[i+1] = helper2.ProgramStdLibStart
-		} else {
-			filePaths[i+1] = val
-			locations[i+1] = 0
-		}
-	}
-
-	IncludeBase(&filePaths, &locations)
+	includeBaseComponents(&filePaths, &locations)
 
 	return filePaths, locations, nil
 }
 
-func IncludeBase(filePaths *[]string, locations *[]uint16) {
+// includeBaseComponents
+//
+// This includes everything that is always included.
+//
+// It places the interrupttable at the correct position.
+// It includes the scheduler and all headers in lib/globalHeaders
+func includeBaseComponents(filePaths *[]string, locations *[]uint16) {
 	locationsDe := *locations
 	filepathsDe := *filePaths
 
-	rootPath := helper2.GetRootPath()
-	tablePath := rootPath + helper2.IncludeLocationUse + "/interruptTable.obj"
-	taskPath := rootPath + helper2.IncludeLocationUse + "/scheduling.obj"
+	rootPath := helper.GetRootPath()
+	tablePath := rootPath + helper.IncludeLocationUse + "/interruptTable.obj"
+	taskPath := rootPath + helper.IncludeLocationUse + "/scheduling.obj"
 	IncludeHeaders(filePaths, locations)
 
-	locationsDe = append(locationsDe, helper2.InterrupttableLoc, 0x2381)
+	locationsDe = append(locationsDe, helper.InterrupttableLoc, 0)
 	filepathsDe = append(filepathsDe, tablePath, taskPath)
 
 }
 
+// IncludeHeaders
+//
+// adds all headers in lib/globalHeaders to the filepaths
 func IncludeHeaders(filePaths *[]string, locations *[]uint16) {
 	locationsDe := *locations
 	filepathsDe := *filePaths
 
-	rootPath := helper2.GetRootPath()
-	headerPath := rootPath + helper2.GlobalHeaderLocation
+	rootPath := helper.GetRootPath()
+	headerPath := rootPath + helper.GlobalHeaderLocation
 	dir, err := os.ReadDir(headerPath)
 	if err != nil {
 		panic(err.Error())
@@ -106,16 +101,4 @@ func IncludeHeaders(filePaths *[]string, locations *[]uint16) {
 
 	*locations = locationsTemp
 	*filePaths = filePathsTemp
-}
-
-func handlePossibleStdlibFilepath(filename string) string {
-	dir := filepath.Dir(filename)
-	if dir != helper2.StdLibLocation {
-		//fmt.Println("not stdlib")
-		return filename
-	}
-
-	root := helper2.GetRootPath()
-	file := filepath.Join(filepath.Join(root, helper2.StdLibLocationUse), filepath.Base(filename))
-	return file
 }
