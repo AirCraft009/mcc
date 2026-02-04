@@ -37,3 +37,5 @@
 - `_printstr`: prints a string from O2 is also in instruction set
 - `_printchar`: prints a char from O2 O1 contains char
 - `_readchar`: reads a char from the Keyboard Buffer into O1
+- `_draw_char`: draws a charachter (O4) to the screen at x (O1) y (O2) in the color (O3) (Requires ROM to hold the bitmap font)
+- `_draw_string`: draws a string (O4) to the screen at x (O1) y (O2) in the color (O3) (Requires ROM to hold the bitmap font)
