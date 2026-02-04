@@ -10,8 +10,31 @@
 # TODO : add deleting of tasks
 # TODO : remove bloat out off scheduler
 
+# HELPER METHODS
+get_active_task:
+    MOVI T6 9088
+    LOADB T6 T6
+    RET
+
+get_task_len:
+    MOVI T6 9149
+    LOADB T6 T6
+    RET
+
+get_state_location:
+    MULI T1 task_size       # get Offsets
+    ADDI T1 task_start       # get location
+    SUBI T1 2
+    RET
+
+get_state:          # T1 has the task number from 0
+    CALL get_state_location
+    LOADB T1 T1     # LOAD into T1
+    RET
+# HELEPR METHODS END
+
 _init_scheduler:
-    CALL _get_task_len
+    CALL get_task_len
     MOV T5 T6
     ADDI T5 1
     MOVI T6 active_task_location
@@ -19,7 +42,7 @@ _init_scheduler:
     JMP _scheduler
 
 _setup_scheduler:
-    CALL _get_active_task
+    CALL get_active_task
     MOV T4 T6
     MOVI T3 task_start
     MOVI T6 task_size
@@ -40,7 +63,7 @@ SETUP_INTERRUPT_HANDLER:
         JMP FOUND_TASK
 
 _unblock_tasks:             # T2 now has the type of task to be unblocked
-    CALL _get_task_len
+    CALL get_task_len
     MOV T4 T6               # T4 == counter
     JMP UNBLOCK_LOOP
 
@@ -49,7 +72,7 @@ UNBLOCK_LOOP:
     JZ RETURN
 
     MOV T1 T4
-    CALL _get_state
+    CALL get_state
 
     CMP T1 T2
     JZ  UNBLOCK
@@ -60,7 +83,7 @@ UNBLOCK_LOOP:
 UNBLOCK:
     MOV T1 T4
     SUBI T4 1
-    CALL _get_state_location
+    CALL get_state_location
 
     MOVI T3 1
     STOREB T3 T1
@@ -73,7 +96,7 @@ ROUND_ROBIN:
     JZ WRAP_ARROUND
 
     MOV T1 T4
-    CALL _get_state
+    CALL get_state
 
     CMPI T1 1       # check if state is ready
     JLE FOUND_TASK
@@ -89,7 +112,7 @@ TEMP_UNYIELD:
     JMP ROUND_ROBIN
 
 WRAP_ARROUND:
-    CALL _get_task_len
+    CALL get_task_len
     MOV T4 T6
     ADDI T4 1
     PUSH T4
@@ -156,13 +179,13 @@ _yield:                 # cooperative yield( willingly from the current lbl)
     JMP SAVE_TASK_YIELD
 
 MARK_TASK_AS_DELETED:
-    CALL _get_active_task
+    CALL get_active_task
     MOV T1 T6
-    CALL _get_task_len      # see if len has to be shortened
+    CALL get_task_len      # see if len has to be shortened
     CMP T1 T6
     JZ  SHORTEN_TASK
 
-    CALL _get_state_location
+    CALL get_state_location
     STOREB O1 T1        # store the termination
     CALL CALC_PC_FOR_ACTIVE_TASK
     MOVI T6 0
@@ -179,16 +202,14 @@ SHORTEN_TASK:
     JMP _scheduler
 
 CALC_PC_FOR_ACTIVE_TASK:
-    CALL _get_active_task
+    CALL get_active_task
     MOV T1 T6
     JMP CALC_PC_FOR_TASK    # will return because of the RET statement in CALC_PC_FOR_TASK
 
 CALC_PC_FOR_TASK:     # T1 has the task
     SUBI T1 1
-    CALL _get_task_size
-    MUL T1 T6
-    MOVI T6 task_start
-    ADD T1 T6
+    MULI T1 task_size
+    ADDI T1 task_start
     RET
 
 
@@ -202,9 +223,9 @@ _interrupt:
 
 
 BLOCK_SAVE:
-    CALL _get_active_task
+    CALL get_active_task
     MOV T1 T6
-    CALL _get_state_location
+    CALL get_state_location
     MOVI T6 1
     STOREB T1 T6        # make sure that the task is saved as ready
     MOVI I2 0
@@ -214,7 +235,7 @@ BLOCK_SAVE:
 
 
 SAVE_TASK:
-    CALL _get_active_task
+    CALL get_active_task
     SUBI T6 1
     MOV T5 T6           # save activeTaskNum
     MOVI T6 task_size
@@ -259,11 +280,11 @@ SAVE_TASK_YIELD:
 
 FIND_NEXT_EMPTY_TASK:
     MOVI T2 0
-    CALL _get_task_len
+    CALL get_task_len
     JMP FIND_NEXT_EMPTY_TASK_LOOP
 
 FIND_NEXT_EMPTY_TASK_LOOP:
-    CALL _get_task_len
+    CALL get_task_len
     CMP T2 T6
     JZ UPDATE_LEN
 
@@ -318,7 +339,7 @@ _spawn:         # creates a task and saves it
 
     ADDI T5 2                   # set- up Stack
     MOVI T1 split_stack_size
-    CALL _get_task_len
+    CALL get_task_len
     SUBI T6 1
     MUL T1 T6
     MOVI T6 stack_start

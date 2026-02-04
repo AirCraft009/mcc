@@ -22,6 +22,7 @@ _read_char:
     ADDI O2 1
     MODI O2 30
     STOREB O2 O3
+    CLZ
     RET
 
 
@@ -93,7 +94,7 @@ DRAW_MASK_LINE_LOOP:
     JZ END_DRAW_MASK_LINE
 
     MOV O6 O4
-    RS O6 O5                # left shift
+    RS O6 O5                # right shift
     MODI O6 2
     CMPI O6 1               # see if it's !even /the last bit is a 1
     JNZ CONTINUE_LOOP

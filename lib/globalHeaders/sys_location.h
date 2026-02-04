@@ -26,25 +26,3 @@
 
 #define writeable_heap:9629
 
-_get_active_task:
-    MOVI T6 9088
-    LOADB T6 T6
-    RET
-
-_get_task_len:
-    MOVI T6 9149
-    LOADB T6 T6
-    RET
-
-_get_state_location:
-    CALL _get_task_size
-    MUL T1 T6       # get Offsets
-    CALL _get_task_start
-    ADD T1 T6       # get location
-    SUBI T1 2
-    RET
-
-_get_state:          # T1 has the task number from 0
-    CALL _get_state_location
-    LOADB T1 T1     # LOAD into T1
-    RET

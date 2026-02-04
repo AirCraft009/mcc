@@ -1,3 +1,3 @@
 start:
-    CALL _aaabbb
-    JMP start
+    call _aaabbb
+    jmp start
