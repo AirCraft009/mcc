@@ -42,49 +42,6 @@ func parseFormatOPRegAddr(parameters []string, currPC uint16, parser *Parser) (p
 	return currPC, code, syntax
 }
 
-func formatString(parameters []string) (formatted [][]string) {
-	//STRING RegUse RegAddr "STRING"
-	var rx, ry string
-	//rx = part
-	//ry = addr
-	rx = parameters[RegsLoc1]
-	ry = parameters[RegsLoc2]
-	inputStringParts := parameters[StrLoc:]
-	if len(inputStringParts) == 0 {
-		return formatted
-	}
-	var inputString string
-	for _, part := range inputStringParts {
-		inputString += part + " "
-	}
-	inputString = strings.ReplaceAll(inputString, "\"", "")
-	inputString = inputString[:len(inputString)-1]
-	length := len(inputString)
-	/**
-	Jeder einzelne char wird mit diesen drei Op's dargestellt
-	es ist lenght prefix based bedeutet das erste Word, welches gelesen wird ist die länge des Strings
-	MOVI reg1 part
-	ADDI reg2 0
-	STOREB reg1 reg2
-	*/
-	formatted = [][]string{
-		{"MOVI", rx, strconv.Itoa(length)},
-		{"STOREW", rx, ry},
-		{"ADDI", ry, "1"},
-	}
-	for _, part := range inputString {
-
-		formatted = append(formatted,
-			[]string{"MOVI", rx, strconv.Itoa(int(part))},
-			[]string{"ADDI", ry, "1"},
-			[]string{"STOREB", rx, ry},
-		)
-	}
-	formatted = append(formatted,
-		[]string{"SUBI", ry, strconv.Itoa(length + 1)})
-	return formatted
-}
-
 func parseFormatOPRegReg(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error) {
 	var rx, ry byte
 	checkMalformedInstruction(parameters, currPC)

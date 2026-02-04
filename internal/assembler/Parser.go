@@ -31,6 +31,7 @@ const (
 func (parser *Parser) FirstPass(data [][]string) [][]string {
 	var PC uint16
 	formattedExtraCode := make(map[int][][]string)
+	var activeLabel string
 
 	for i, line := range data {
 		// a : signifies a label
@@ -40,20 +41,20 @@ func (parser *Parser) FirstPass(data [][]string) [][]string {
 			if strings.HasPrefix(line[0], "_") {
 				parser.ObjFile.Globals[PC] = true
 			}
-
+			activeLabel = line[0]
 			continue
 			// check for formatters (smth that arranges code in other ways
-		} else if formatter, ok := parser.Formatter[strings.ToUpper(line[0])]; ok {
+		} else if formatter, ok := parser.Formatter[line[0]]; ok {
 			formatted := formatter(data[i])
 			formattedExtraCode[i] = formatted
 			for _, formatLine := range formatted {
-				ad, _ := pkg.OffsetMap[strings.ToUpper(formatLine[0])]
+				ad, _ := pkg.OffsetMap[formatLine[0]]
 				PC += uint16(ad)
 			}
 			continue
 		}
 
-		ad, ok := pkg.OffsetMap[strings.ToUpper(line[0])]
+		ad, ok := pkg.OffsetMap[line[0]]
 		if !ok {
 			fmt.Println(line[0])
 			fmt.Println(PC)

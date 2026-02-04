@@ -4,7 +4,7 @@ import "github.com/AirCraft009/mcc/pkg"
 
 type Parser struct {
 	Parsers   map[string]func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)
-	Formatter map[string]func(parameters []string) (formatted [][]string)
+	Formatter map[string]func(parameters []string, activeLabel string)
 	Labels    map[string]uint16
 	ObjFile   *pkg.ObjectFile
 }
@@ -12,7 +12,7 @@ type Parser struct {
 func newParser() *Parser {
 	parser := &Parser{
 		Parsers:   make(map[string]func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)),
-		Formatter: make(map[string]func(parameters []string) (formatted [][]string)),
+		Formatter: make(map[string]func(parameters []string, activeLabel string)),
 		Labels:    make(map[string]uint16),
 		ObjFile:   pkg.NewObjectFile(),
 	}
@@ -53,7 +53,6 @@ func newParser() *Parser {
 	parser.Parsers["JLE"] = parseFormatOPLbl
 	parser.Parsers["JG"] = parseFormatOPLbl
 	parser.Parsers["JGE"] = parseFormatOPLbl
-	parser.Formatter["STRING"] = formatString
 	parser.Parsers["STZ"] = parseFormatOP
 	parser.Parsers["STC"] = parseFormatOP
 	parser.Parsers["CLZ"] = parseFormatOP
