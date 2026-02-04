@@ -1,14 +1,15 @@
-package helper
+package mcc
 
 import (
 	"embed"
-	"errors"
 	"os"
 	"path/filepath"
+
+	"github.com/AirCraft009/mcc/internal/helper"
 )
 
-//go:embed lib/stdlib/obj/*.obj
-var EmbedFS embed.FS
+//go:embed lib/stdlib/obj/.*obj
+var embedFS embed.FS
 
 type FSHelper struct {
 	wdPath     string
@@ -16,14 +17,14 @@ type FSHelper struct {
 	EmbedFS    embed.FS
 }
 
-func initFSHelper() *FSHelper {
+func InitFSHelper() *FSHelper {
 	wdPath, err := os.Getwd()
 	if err != nil {
 		panic(err.Error())
 	}
-	stdlibPath := filepath.Join(GetRootPath(), StdLibLocationUse)
+	stdlibPath := filepath.Join(helper.GetRootPath(), helper.StdLibLocationUse)
 
-	return &FSHelper{wdPath, stdlibPath, EmbedFS}
+	return &FSHelper{wdPath, stdlibPath, embedFS}
 }
 
 func (FS *FSHelper) ResolveReadFile(path string) ([]byte, error) {
@@ -37,11 +38,7 @@ func (FS *FSHelper) ResolveReadFile(path string) ([]byte, error) {
 		return fileData, nil
 	}
 
-	if fileData, err := FS.EmbedFS.ReadFile(filepath.Base(path)); err == nil {
-		return fileData, nil
-	}
-
-	return nil, errors.New("No File Found while resolving: " + path)
+	return FS.EmbedFS.ReadFile(filepath.Base(path))
 }
 
 func (FS *FSHelper) ResolveGlobal() {
