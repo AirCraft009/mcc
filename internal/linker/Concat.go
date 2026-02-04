@@ -30,9 +30,6 @@ func FindIncludes(filePath string) (filePaths []string, locations []uint16, e er
 
 		for _, line := range strings.Split(stringData, "\n") {
 			line = strings.TrimSpace(line)
-			if !strings.HasPrefix(line, helper2.IncludeSignifier) {
-				break
-			}
 			// line should contain the relative path from the line data location to the include data
 			line = strings.TrimSpace(strings.TrimPrefix(line, helper2.IncludeSignifier))
 			cleanedPath := filepath.Clean(filepath.Join(dir, line))
