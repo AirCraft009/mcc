@@ -3,11 +3,11 @@ package linker
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
 
+	"github.com/AirCraft009/mcc"
 	"github.com/AirCraft009/mcc/internal/assembler"
 	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
@@ -48,7 +48,7 @@ func NewLinkables(size int) *Linkables {
 
 // AddArraysMultiThreaded
 // sadly unusable - as it causes nondeterministic output by using goroutines
-func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []uint16) error {
+func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []uint16, fsHelper *mcc.FSHelper) error {
 	//clears out anything should be empty anyway but who knows
 	link.Files = make([]*LinkFile, len(filePaths))
 	//force it to start adding at 0
@@ -67,7 +67,7 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 		f, l, j := file, location, i
 		//fmt.Println("sent gothread:", i, file)
 		g.Go(func() error {
-			err := link.addFileMultiThreaded(f, l, j)
+			err := link.addFileMultiThreaded(f, l, j, fsHelper)
 			if err != nil {
 				return err
 			}
@@ -77,7 +77,7 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 	return g.Wait()
 }
 
-func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, index int) (err error) {
+func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, index int, fsHelper *mcc.FSHelper) (err error) {
 	ext := filepath.Ext(filePath)
 	fileT := acceptedFiletypes[ext]
 	if fileT == 0 {
@@ -85,7 +85,7 @@ func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, in
 		return errors.New("Unsupported file type: " + ext)
 	}
 
-	data, err := os.ReadFile(filePath)
+	data, err := fsHelper.ResolveReadFile(filePath)
 	if err != nil {
 		return err
 	}
