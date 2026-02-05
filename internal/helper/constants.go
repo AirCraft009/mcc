@@ -1,7 +1,7 @@
 package helper
 
 const (
-	MemorySize              = 1024 * 16
+	MemorySize              = 1024 * 64
 	ProgramStdLibStart      = 0x1800
 	InterrupttableLoc       = 23965
 	IncludeSignifier        = "#include"
