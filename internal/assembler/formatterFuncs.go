@@ -1,6 +1,9 @@
 package assembler
 
 import (
+	"errors"
+	"strconv"
+
 	"github.com/AirCraft009/mcc/pkg"
 )
 
@@ -38,4 +41,21 @@ func StoreLoadFormatter(parameters []string, activeLabel string, currPC uint16, 
 
 	parameters[RegsLoc2] = "0"
 	return parameters, true
+}
+
+func ZeroFormatter(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool) {
+	// how many zero-bytes
+	ammount, err := strconv.Atoi(parameters[RegsLoc1])
+
+	if err != nil {
+		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
+	}
+
+	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
+		Offset: parser.BssPtr,
+		Lbl:    activeLabel,
+	})
+
+	parser.BssPtr += uint16(ammount)
+	return parameters, false
 }

@@ -10,6 +10,8 @@ type Parser struct {
 	Formatter map[string]formatter
 	Labels    map[string]uint16
 	ObjFile   *pkg.ObjectFile
+	BssPtr    uint16
+	DataPtr   uint16
 }
 
 func newParser() *Parser {
@@ -91,5 +93,9 @@ func newParser() *Parser {
 	parser.Formatter["LOADB"] = StoreLoadFormatter
 	parser.Formatter["LOADW"] = StoreLoadFormatter
 
+	parser.Formatter[".ZERO"] = ZeroFormatter
+	//parser.Formatter[".WORD"]
+	//	parser.Formatter[".BYTE"]
+	//	parser.Formatter[".STRING"]
 	return parser
 }

@@ -91,6 +91,7 @@ func (parser *Parser) firstPass(data [][]string) [][]string {
 		} else if actFormatter, ok := parser.Formatter[line[0]]; ok {
 			formatted, affectsPC := actFormatter(data[i], activeLabel, PC, parser)
 			line = formatted
+			data[i] = formatted
 			if !affectsPC {
 				continue
 			}
