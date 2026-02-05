@@ -11,4 +11,10 @@ const (
 	GlobalHeaderLocation    = "/lib/globalHeaders"
 	StdLibLocationUse       = StdlibLocation + "/obj"
 	IncludeLocationUse      = includeLocation + "/obj"
+
+	DataStart = 0xE400
+	DataEnd   = 0xE3FF
+
+	BssSectionStart = 0xE400
+	BssSectionEnd   = 0xE7FF
 )
