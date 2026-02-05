@@ -1,7 +1,7 @@
-// Package assembler
+// Package assembly
 //
 // Handles Assembling the .asm files into object files
-package assembler
+package assembly
 
 import (
 	"errors"
@@ -72,6 +72,7 @@ func checkLabel(rawLabel string) (string, error) {
 func (parser *Parser) firstPass(data [][]string) [][]string {
 	var PC uint16
 	var activeLabel string
+	var labelType LableT
 
 	for i, line := range data {
 		// a : signifies a label
@@ -85,14 +86,23 @@ func (parser *Parser) firstPass(data [][]string) [][]string {
 			if strings.HasPrefix(line[0], "_") {
 				parser.ObjFile.Globals[PC] = true
 			}
+			labelType = undefined
 			activeLabel = rawLabel
 			continue
 			// check for formatters (smth that arranges code in other ways
 		} else if actFormatter, ok := parser.Formatter[line[0]]; ok {
+			if labelType == codeLabel {
+				fmt.Println(activeLabel)
+				fmt.Println(PC)
+				panic("mixing Data label & Code labels")
+			}
 			formatted, affectsPC := actFormatter(data[i], activeLabel, PC, parser)
 			line = formatted
 			data[i] = formatted
 			if !affectsPC {
+				// if it doesn't affect the PC it's an assembler directive
+				// This also means that the label associated with this is now a data label
+				labelType = dataLabel
 				continue
 			}
 		}
@@ -102,6 +112,11 @@ func (parser *Parser) firstPass(data [][]string) [][]string {
 			fmt.Println(line[0])
 			fmt.Println(PC)
 			panic("unknown Offset")
+		}
+		if labelType == dataLabel {
+			fmt.Println(activeLabel)
+			fmt.Println(PC)
+			panic("mixing Data label & Code labels")
 		}
 		PC += uint16(ad)
 	}

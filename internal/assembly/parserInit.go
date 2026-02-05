@@ -1,4 +1,4 @@
-package assembler
+package assembly
 
 import (
 	"github.com/AirCraft009/mcc/pkg"
@@ -6,6 +6,14 @@ import (
 
 type formatter func(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool)
 type parser func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)
+
+type LableT byte
+
+const (
+	undefined LableT = iota
+	codeLabel
+	dataLabel
+)
 
 type Parser struct {
 	Parsers   map[string]parser

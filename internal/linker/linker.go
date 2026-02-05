@@ -33,7 +33,7 @@ func defineGlobalLookupTable(objectFiles map[*pkg.ObjectFile]uint16) (globalLook
 
 func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, debug, objectResolution, verbose bool) (code []byte, debugLocations map[uint16]string, err error) {
 	//debug locations are only necesarry if the debugger is used can be discarded otherwise
-	finalCode := make([]byte, helper2.MemorySize)
+	finalCode := make([]byte, pkg.MemorySize)
 	if debug {
 		debugLocations = make(map[uint16]string)
 	}
@@ -55,7 +55,7 @@ func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, debug, objectResolution
 					panic("Label not found: " + relo.Lbl)
 				}
 				symbol = globalSymbol
-			} else {
+			} else if !relo.Data {
 				symbol += location
 			}
 
@@ -70,6 +70,7 @@ func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, debug, objectResolution
 			objFile.Code[relo.Offset] = hi
 			objFile.Code[relo.Offset+1] = lo
 		}
+
 		finalCode = helper2.ConcactSliceAtIndex(finalCode, objFile.Code, int(location))
 		if objectResolution {
 			//TODO: write the .obj next to the position of the .asm

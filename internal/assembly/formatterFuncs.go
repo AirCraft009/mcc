@@ -1,4 +1,4 @@
-package assembler
+package assembly
 
 import (
 	"errors"
@@ -37,6 +37,7 @@ func StoreLoadFormatter(parameters []string, activeLabel string, currPC uint16, 
 	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
 		Offset: currPC,
 		Lbl:    label,
+		Data:   true,
 	})
 	// set 0 STORE instructions can handle real number they will later get replaced by the relocation
 
@@ -51,12 +52,8 @@ func ZeroFormatter(parameters []string, activeLabel string, currPC uint16, parse
 	if err != nil {
 		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
 	}
-
-	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
-		Offset: parser.ObjFile.BssPtr,
-		Lbl:    activeLabel,
-	})
-
+	parser.Labels[activeLabel] = parser.ObjFile.BssPtr
+	parser.ObjFile.BssSections[activeLabel] = uint16(ammount)
 	parser.ObjFile.BssPtr += uint16(ammount)
 	return parameters, false
 }
@@ -70,13 +67,25 @@ func WordFormatter(parameters []string, activeLabel string, currPC uint16, parse
 	}
 
 	hi, lo := helper.EncodeAddr(uint16(val))
-	parser.ObjFile.InitData[activeLabel] = []byte{hi, lo}
+
+	parser.Labels[activeLabel] = parser.ObjFile.DataPtr
+	data := parser.ObjFile.InitData[activeLabel]
+	if data == nil {
+		data = []byte{hi, lo}
+	} else {
+		data = append(data, hi, lo)
+	}
 
 	// Word == 2Bytes
 	parser.ObjFile.DataPtr += 2
 	return []string{}, false
 }
 
+// ByteFormatter
+//
+// formats .BYTE instructions
+// STOREB R0 LABEL
+// STOREB R0 0
 func ByteFormatter(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool) {
 	// how many zero-bytes
 	val, err := strconv.Atoi(parameters[RegsLoc1])
@@ -85,6 +94,7 @@ func ByteFormatter(parameters []string, activeLabel string, currPC uint16, parse
 		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
 	}
 
+	parser.Labels[activeLabel] = parser.ObjFile.DataPtr
 	data := parser.ObjFile.InitData[activeLabel]
 	if data == nil {
 		data = []byte{byte(val)}

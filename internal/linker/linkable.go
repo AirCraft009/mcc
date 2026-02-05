@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/AirCraft009/mcc"
-	"github.com/AirCraft009/mcc/internal/assembler"
+	"github.com/AirCraft009/mcc/internal/assembly"
 	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
 
@@ -170,7 +170,7 @@ func (link *Linkables) GetObjectFiles(outPath string, write, verbose bool) (obje
 			}
 
 		} else {
-			objFile = assembler.AssembleAndWrite(string(file.Data), outPath, write)
+			objFile = assembly.AssembleAndWrite(string(file.Data), outPath, write)
 		}
 
 		// is location already used by another file
