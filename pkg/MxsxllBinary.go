@@ -8,8 +8,6 @@ import (
 	"io"
 	"os"
 	"sort"
-
-	"github.com/AirCraft009/mcc/internal/helper"
 )
 
 const MagicObject = "MXBO"
@@ -113,10 +111,10 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 }
 
 func FormatMxBinary(code []byte, debugSymbols map[uint16]string, debug bool) (data []byte) {
-	if len(code) != helper.MemorySize {
+	if len(code) != MemorySize {
 		panic(fmt.Errorf("invalid code length: %d", len(code)))
 	}
-	var buf bytes.Buffer = *bytes.NewBuffer(make([]byte, 0, len(code)+helper.MemorySize+BinHeaderLen))
+	var buf bytes.Buffer = *bytes.NewBuffer(make([]byte, 0, len(code)+MemorySize+BinHeaderLen))
 
 	// 4Bytes Header
 	buf.Write([]byte(MagicBinary))
@@ -169,7 +167,7 @@ func WriteMxBinary(outputFile string, code []byte, debugSymbols map[uint16]strin
 func GetDataFromMxBinary(data []byte) (code []byte, debugSymbols map[uint16]string, debug bool, err error) {
 	reader := bytes.NewReader(data)
 	header := make([]byte, 4)
-	code = make([]byte, helper.MemorySize)
+	code = make([]byte, MemorySize)
 
 	binary.Read(reader, binary.LittleEndian, &header)
 	if string(header) != MagicBinary {
@@ -182,8 +180,8 @@ func GetDataFromMxBinary(data []byte) (code []byte, debugSymbols map[uint16]stri
 
 	binary.Read(reader, binary.LittleEndian, &codeLen)
 
-	if codeLen != helper.MemorySize-1 {
-		return nil, nil, false, fmt.Errorf("invalid code length: %d expected %d\nCode needs to fill the full memory", codeLen, helper.MemorySize-1)
+	if codeLen != MemorySize-1 {
+		return nil, nil, false, fmt.Errorf("invalid code length: %d expected %d\nCode needs to fill the full memory", codeLen, MemorySize-1)
 	}
 
 	binary.Read(reader, binary.LittleEndian, &symbolCount)

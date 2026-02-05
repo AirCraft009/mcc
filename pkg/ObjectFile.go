@@ -1,10 +1,13 @@
 package pkg
 
 type ObjectFile struct {
-	Code    []byte
-	Symbols map[string]uint16
-	Relocs  []RelocationEntry
-	Globals map[uint16]bool
+	Code     []byte
+	Symbols  map[string]uint16
+	Relocs   []RelocationEntry
+	Globals  map[uint16]bool
+	BssPtr   uint16
+	DataPtr  uint16
+	InitData map[string][]byte
 }
 
 type RelocationEntry struct {
@@ -14,9 +17,12 @@ type RelocationEntry struct {
 
 func NewObjectFile() *ObjectFile {
 	return &ObjectFile{
-		Code:    nil,
-		Symbols: make(map[string]uint16),
-		Relocs:  make([]RelocationEntry, 0),
-		Globals: make(map[uint16]bool),
+		Code:     nil,
+		Symbols:  make(map[string]uint16),
+		Relocs:   make([]RelocationEntry, 0),
+		Globals:  make(map[uint16]bool),
+		BssPtr:   BssSectionStart,
+		DataPtr:  DataStart,
+		InitData: make(map[string][]byte),
 	}
 }

@@ -1,6 +1,8 @@
 package assembler
 
-import "github.com/AirCraft009/mcc/pkg"
+import (
+	"github.com/AirCraft009/mcc/pkg"
+)
 
 type formatter func(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool)
 type parser func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)
@@ -10,10 +12,6 @@ type Parser struct {
 	Formatter map[string]formatter
 	Labels    map[string]uint16
 	ObjFile   *pkg.ObjectFile
-	BssPtr    uint16
-	DataPtr   uint16
-	// data to place
-	InitData map[string][]byte
 }
 
 func newParser() *Parser {
@@ -22,7 +20,6 @@ func newParser() *Parser {
 		Formatter: make(map[string]formatter),
 		Labels:    make(map[string]uint16),
 		ObjFile:   pkg.NewObjectFile(),
-		InitData:  make(map[string][]byte),
 	}
 
 	parser.Parsers["NOP"] = parseFormatOP

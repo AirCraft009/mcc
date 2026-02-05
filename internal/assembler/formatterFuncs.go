@@ -53,11 +53,11 @@ func ZeroFormatter(parameters []string, activeLabel string, currPC uint16, parse
 	}
 
 	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
-		Offset: parser.BssPtr,
+		Offset: parser.ObjFile.BssPtr,
 		Lbl:    activeLabel,
 	})
 
-	parser.BssPtr += uint16(ammount)
+	parser.ObjFile.BssPtr += uint16(ammount)
 	return parameters, false
 }
 
@@ -69,15 +69,11 @@ func WordFormatter(parameters []string, activeLabel string, currPC uint16, parse
 		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
 	}
 
-	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
-		Offset: parser.DataPtr,
-		Lbl:    activeLabel,
-	})
 	hi, lo := helper.EncodeAddr(uint16(val))
-	parser.InitData[activeLabel] = []byte{hi, lo}
+	parser.ObjFile.InitData[activeLabel] = []byte{hi, lo}
 
 	// Word == 2Bytes
-	parser.DataPtr += 2
+	parser.ObjFile.DataPtr += 2
 	return []string{}, false
 }
 
@@ -89,13 +85,15 @@ func ByteFormatter(parameters []string, activeLabel string, currPC uint16, parse
 		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
 	}
 
-	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
-		Offset: parser.DataPtr,
-		Lbl:    activeLabel,
-	})
-	parser.InitData[activeLabel] = []byte{byte(val)}
+	data := parser.ObjFile.InitData[activeLabel]
+	if data == nil {
+		data = []byte{byte(val)}
+	} else {
+		data = append(data, byte(val))
+	}
 
+	parser.ObjFile.InitData[activeLabel] = data
 	// 1Byte
-	parser.DataPtr += 1
+	parser.ObjFile.DataPtr += 1
 	return []string{}, false
 }
