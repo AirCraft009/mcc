@@ -121,7 +121,8 @@ func FormatMxBinary(code []byte, debugSymbols map[uint16]string, debug bool) (da
 	// 4Bytes Header
 	buf.Write([]byte(MagicBinary))
 	// 2 Bytes code lenght
-	binary.Write(&buf, binary.LittleEndian, uint16(len(code)))
+	// - 1 so it dosen't overflow 64 kb
+	binary.Write(&buf, binary.LittleEndian, uint16(len(code)-1))
 	binary.Write(&buf, binary.LittleEndian, uint16(len(debugSymbols)))
 
 	if !debug {
@@ -181,8 +182,8 @@ func GetDataFromMxBinary(data []byte) (code []byte, debugSymbols map[uint16]stri
 
 	binary.Read(reader, binary.LittleEndian, &codeLen)
 
-	if codeLen != helper.MemorySize {
-		return nil, nil, false, fmt.Errorf("invalid code length: %d expected %d\nCode needs to fill the full memory", codeLen, helper.MemorySize)
+	if codeLen != helper.MemorySize-1 {
+		return nil, nil, false, fmt.Errorf("invalid code length: %d expected %d\nCode needs to fill the full memory", codeLen, helper.MemorySize-1)
 	}
 
 	binary.Read(reader, binary.LittleEndian, &symbolCount)
