@@ -52,9 +52,8 @@ func ZeroFormatter(parameters []string, activeLabel string, currPC uint16, parse
 	if err != nil {
 		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
 	}
-	parser.Labels[activeLabel] = parser.ObjFile.BssPtr
+	parser.Labels[activeLabel] = 0
 	parser.ObjFile.BssSections[activeLabel] = uint16(ammount)
-	parser.ObjFile.BssPtr += uint16(ammount)
 	return parameters, false
 }
 
@@ -68,7 +67,7 @@ func WordFormatter(parameters []string, activeLabel string, currPC uint16, parse
 
 	hi, lo := helper.EncodeAddr(uint16(val))
 
-	parser.Labels[activeLabel] = parser.ObjFile.DataPtr
+	parser.Labels[activeLabel] = 0
 	data := parser.ObjFile.InitData[activeLabel]
 	if data == nil {
 		data = []byte{hi, lo}
@@ -76,8 +75,6 @@ func WordFormatter(parameters []string, activeLabel string, currPC uint16, parse
 		data = append(data, hi, lo)
 	}
 
-	// Word == 2Bytes
-	parser.ObjFile.DataPtr += 2
 	return []string{}, false
 }
 
@@ -94,7 +91,7 @@ func ByteFormatter(parameters []string, activeLabel string, currPC uint16, parse
 		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
 	}
 
-	parser.Labels[activeLabel] = parser.ObjFile.DataPtr
+	parser.Labels[activeLabel] = 0
 	data := parser.ObjFile.InitData[activeLabel]
 	if data == nil {
 		data = []byte{byte(val)}
@@ -103,7 +100,5 @@ func ByteFormatter(parameters []string, activeLabel string, currPC uint16, parse
 	}
 
 	parser.ObjFile.InitData[activeLabel] = data
-	// 1Byte
-	parser.ObjFile.DataPtr += 1
 	return []string{}, false
 }

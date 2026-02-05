@@ -15,9 +15,7 @@ type ObjectFile struct {
 	Symbols     map[string]uint16
 	Relocs      []RelocationEntry
 	Globals     map[uint16]bool
-	BssPtr      uint16
 	BssSections map[string]uint16
-	DataPtr     uint16
 	InitData    map[string][]byte
 }
 
@@ -43,8 +41,6 @@ func NewObjectFile() *ObjectFile {
 		Symbols:     make(map[string]uint16),
 		Relocs:      make([]RelocationEntry, 0),
 		Globals:     make(map[uint16]bool),
-		BssPtr:      0,
-		DataPtr:     0,
 		BssSections: make(map[string]uint16),
 		InitData:    make(map[string][]byte),
 	}
