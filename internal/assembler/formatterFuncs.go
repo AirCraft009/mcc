@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
 )
 
@@ -58,4 +59,43 @@ func ZeroFormatter(parameters []string, activeLabel string, currPC uint16, parse
 
 	parser.BssPtr += uint16(ammount)
 	return parameters, false
+}
+
+func WordFormatter(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool) {
+	// how many zero-bytes
+	val, err := strconv.Atoi(parameters[RegsLoc1])
+
+	if err != nil {
+		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
+	}
+
+	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
+		Offset: parser.DataPtr,
+		Lbl:    activeLabel,
+	})
+	hi, lo := helper.EncodeAddr(uint16(val))
+	parser.InitData[activeLabel] = []byte{hi, lo}
+
+	// Word == 2Bytes
+	parser.DataPtr += 2
+	return []string{}, false
+}
+
+func ByteFormatter(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool) {
+	// how many zero-bytes
+	val, err := strconv.Atoi(parameters[RegsLoc1])
+
+	if err != nil {
+		panic(errors.New(".ZERO takes an integer. Got " + parameters[RegsLoc1] + "\n err: " + err.Error()))
+	}
+
+	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
+		Offset: parser.DataPtr,
+		Lbl:    activeLabel,
+	})
+	parser.InitData[activeLabel] = []byte{byte(val)}
+
+	// 1Byte
+	parser.DataPtr += 1
+	return []string{}, false
 }

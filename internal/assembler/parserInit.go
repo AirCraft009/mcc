@@ -12,6 +12,8 @@ type Parser struct {
 	ObjFile   *pkg.ObjectFile
 	BssPtr    uint16
 	DataPtr   uint16
+	// data to place
+	InitData map[string][]byte
 }
 
 func newParser() *Parser {
@@ -20,6 +22,7 @@ func newParser() *Parser {
 		Formatter: make(map[string]formatter),
 		Labels:    make(map[string]uint16),
 		ObjFile:   pkg.NewObjectFile(),
+		InitData:  make(map[string][]byte),
 	}
 
 	parser.Parsers["NOP"] = parseFormatOP
@@ -94,8 +97,8 @@ func newParser() *Parser {
 	parser.Formatter["LOADW"] = StoreLoadFormatter
 
 	parser.Formatter[".ZERO"] = ZeroFormatter
-	//parser.Formatter[".WORD"]
-	//	parser.Formatter[".BYTE"]
+	parser.Formatter[".WORD"] = WordFormatter
+	parser.Formatter[".BYTE"] = ByteFormatter
 	//	parser.Formatter[".STRING"]
 	return parser
 }
