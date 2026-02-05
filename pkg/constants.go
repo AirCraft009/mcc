@@ -42,11 +42,14 @@ const (
 	// ExtraStart ───── Unused / Future Expansion / Paging Tables / Filesystem etc (≈16KB KB) ─────
 	ExtraStart = 0xC021
 
-	DataStart = 0xE400
+	DataStart = 0xE000
 	DataEnd   = 0xE3FF
+	DataSize  = DataEnd - DataStart
 
 	BssSectionStart = 0xE400
 	BssSectionEnd   = 0xE7FF
-	ExtraEnd        = 0xFFFF
-	ExtraSize       = ExtraEnd - ExtraStart
+	BssSectionSize  = BssSectionEnd - BssSectionStart
+
+	ExtraEnd  = 0xFFFF
+	ExtraSize = ExtraEnd - ExtraStart
 )
