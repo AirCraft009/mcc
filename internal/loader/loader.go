@@ -7,7 +7,6 @@ import (
 /*
 Plan
 
-TODO:
 1. data von nicht data trennen
 2. data relocs zuordnen (bss/data , für beide einen ptr führen
 3. code bauen bss ist 0 aber data muss gefüllt werden
@@ -27,7 +26,9 @@ func LoadData(objs []*pkg.ObjectFile) {
 	DatLoader := parseObjs(objs)
 	DatLoader.setRelocs()
 	for i, obj := range objs {
-		obj.Relocs = DatLoader.DataRelocs[i]
+		for _, reloc := range DatLoader.DataRelocs[i] {
+			obj.Symbols[reloc.Lbl] = reloc.Offset
+		}
 	}
 }
 
