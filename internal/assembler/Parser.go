@@ -4,11 +4,12 @@
 package assembler
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
-	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
 )
 
@@ -25,33 +26,74 @@ const (
 	RegWidthOffset = 1
 )
 
-// FirstPass
+// parseLines
+//
+// prepares the data into a format which is easily parseable
+// it removes any whitespaces, comments and formats cleanly,
+//
+// it returns a string slice slice that has OPs and Params split
+func parseLines(data string) [][]string {
+	//turns into array removes comments
+	stringLines := strings.Split(data, "\n")
+	stringParts := make([][]string, len(stringLines))
+	stringPartIndex := 0
+	for index, line := range stringLines {
+		line = strings.TrimSpace(line)
+		commentIndex := strings.Index(line, "#")
+		if commentIndex != -1 {
+			line = line[:commentIndex]
+			stringLines[index] = line
+		}
+		if line != "" {
+			lineParts := strings.Fields(line)
+			stringParts[stringPartIndex] = lineParts
+			stringPartIndex++
+		}
+	}
+	return stringParts[:stringPartIndex]
+}
+
+func checkLabel(rawLabel string) (string, error) {
+	_, err := strconv.Atoi(rawLabel)
+	if err == nil {
+		return "", errors.New("Label can't be a number: " + rawLabel)
+	}
+
+	if _, ok := pkg.RegMap[rawLabel]; ok {
+		return "", errors.New("Label can't be a Register: " + rawLabel)
+	}
+
+	return rawLabel, nil
+}
+
+// firstPass
 //
 // seperates out labels and their Addresses
-func (parser *Parser) FirstPass(data [][]string) [][]string {
+func (parser *Parser) firstPass(data [][]string) [][]string {
 	var PC uint16
-	formattedExtraCode := make(map[int][][]string)
 	var activeLabel string
 
 	for i, line := range data {
 		// a : signifies a label
 		if len(line) == 1 && strings.Contains(line[0], ":") {
-			parser.Labels[line[0][:len(line[0])-1]] = PC
+			rawLabel, err := checkLabel(line[0][:len(line[0])-1])
+			if err != nil {
+				panic(err.Error())
+			}
+			parser.Labels[rawLabel] = PC
 			// an undersorce makes it global
 			if strings.HasPrefix(line[0], "_") {
 				parser.ObjFile.Globals[PC] = true
 			}
-			activeLabel = line[0]
+			activeLabel = rawLabel
 			continue
 			// check for formatters (smth that arranges code in other ways
-		} else if formatter, ok := parser.Formatter[line[0]]; ok {
-			formatted := formatter(data[i])
-			formattedExtraCode[i] = formatted
-			for _, formatLine := range formatted {
-				ad, _ := pkg.OffsetMap[formatLine[0]]
-				PC += uint16(ad)
+		} else if actFormatter, ok := parser.Formatter[line[0]]; ok {
+			formatted, affectsPC := actFormatter(data[i], activeLabel, PC, parser)
+			line = formatted
+			if !affectsPC {
+				continue
 			}
-			continue
 		}
 
 		ad, ok := pkg.OffsetMap[line[0]]
@@ -62,15 +104,11 @@ func (parser *Parser) FirstPass(data [][]string) [][]string {
 		}
 		PC += uint16(ad)
 	}
-	for i, extraData := range formattedExtraCode {
-		data = helper.DeleteMatrixRow(data, i)
-		data = helper.InsertMatrixAtIndex(data, extraData, i)
-	}
 	parser.ObjFile.Symbols = parser.Labels
 	return data
 }
 
-func (parser *Parser) SecondPass(data [][]string) (ObjFile *pkg.ObjectFile) {
+func (parser *Parser) secondPass(data [][]string) (ObjFile *pkg.ObjectFile) {
 	code := make([]byte, 0)
 
 	PC := uint16(0)
@@ -96,19 +134,15 @@ func (parser *Parser) SecondPass(data [][]string) (ObjFile *pkg.ObjectFile) {
 // It first parses all lables to relocate,
 // then finishes compiling into bytecode
 func Assemble(data string) *pkg.ObjectFile {
-	parsedData := ParseLines(data)
+	parsedData := parseLines(data)
 	parser := newParser()
 	var formattedData [][]string
-	formattedData = parser.FirstPass(parsedData)
+	formattedData = parser.firstPass(parsedData)
 
-	return parser.SecondPass(formattedData)
+	return parser.secondPass(formattedData)
 }
 
-// AssembleAndWrite
-// assembles string asm files\
-//
-// returns an Objectfile containing relocation information
-// & Code without resolved labels(0x0, 0x0)
+// AssembleAndWrite assembles string asm files and writes them if wanted
 func AssembleAndWrite(data, path string, write bool) *pkg.ObjectFile {
 	ObjFile := Assemble(data)
 

@@ -58,12 +58,14 @@ func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, debug, objectResolution
 			} else {
 				symbol += location
 			}
+
 			if debug {
 				debugLocations[symbol] = relo.Lbl
 			}
 			if verbose {
 				fmt.Printf("Linking label %s to %d\n", relo.Lbl, symbol)
 			}
+
 			hi, lo := helper2.EncodeAddr(symbol)
 			objFile.Code[relo.Offset] = hi
 			objFile.Code[relo.Offset+1] = lo

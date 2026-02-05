@@ -2,17 +2,20 @@ package assembler
 
 import "github.com/AirCraft009/mcc/pkg"
 
+type formatter func(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool)
+type parser func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)
+
 type Parser struct {
-	Parsers   map[string]func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)
-	Formatter map[string]func(parameters []string, activeLabel string)
+	Parsers   map[string]parser
+	Formatter map[string]formatter
 	Labels    map[string]uint16
 	ObjFile   *pkg.ObjectFile
 }
 
 func newParser() *Parser {
 	parser := &Parser{
-		Parsers:   make(map[string]func(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error)),
-		Formatter: make(map[string]func(parameters []string, activeLabel string)),
+		Parsers:   make(map[string]parser),
+		Formatter: make(map[string]formatter),
 		Labels:    make(map[string]uint16),
 		ObjFile:   pkg.NewObjectFile(),
 	}
@@ -80,5 +83,13 @@ func newParser() *Parser {
 	parser.Parsers["XOR"] = parseFormatOPRegReg
 	parser.Parsers["DRAWPX"] = parseFormatOPRegReg
 	parser.Parsers["STOREBLOCK"] = parseFormatOPRegReg
+
+	parser.Formatter["STORE"] = StoreLoadFormatter
+	parser.Formatter["STOREB"] = StoreLoadFormatter
+	parser.Formatter["STOREW"] = StoreLoadFormatter
+	parser.Formatter["LOAD"] = StoreLoadFormatter
+	parser.Formatter["LOADB"] = StoreLoadFormatter
+	parser.Formatter["LOADW"] = StoreLoadFormatter
+
 	return parser
 }

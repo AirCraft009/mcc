@@ -3,14 +3,13 @@ package assembler
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
 )
 
 func checkMalformedInstruction(parameters []string, currpc uint16) {
-	parameterlen := pkg.OffsetMap[strings.ToUpper(parameters[0])]
+	parameterlen := pkg.OffsetMap[parameters[0]]
 	if int(parameterlen) > (len(parameters)) {
 		panic(fmt.Sprintf("Malformed instruction %s; at %d: \nexpecting at least: %d parameters; got %d.", parameters[0], currpc, parameterlen, len(parameters)-1))
 	}
@@ -124,25 +123,4 @@ func parseFormatOPReg(parameters []string, currPC uint16, parser *Parser) (pc ui
 	code[RegsLocOut], code[RegsLocOut+RegWidthOffset] = helper.EncodeRegs(rx, ry, false)
 	currPC += uint16(len(code))
 	return currPC, code, nil
-}
-
-func ParseLines(data string) [][]string {
-	//turns into array removes comments
-	stringLines := strings.Split(data, "\n")
-	stringParts := make([][]string, len(stringLines))
-	stringPartIndex := 0
-	for index, line := range stringLines {
-		line = strings.TrimSpace(line)
-		commentIndex := strings.Index(line, "#")
-		if commentIndex != -1 {
-			line = line[:commentIndex]
-			stringLines[index] = line
-		}
-		if line != "" {
-			lineParts := strings.Fields(line)
-			stringParts[stringPartIndex] = lineParts
-			stringPartIndex++
-		}
-	}
-	return stringParts[:stringPartIndex]
 }
