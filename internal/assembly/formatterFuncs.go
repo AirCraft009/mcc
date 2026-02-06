@@ -34,10 +34,13 @@ func StoreLoadFormatter(parameters []string, activeLabel string, currPC uint16, 
 		// Label is a number or Register
 		return parameters, true
 	}
+	label, offset := checkOffsetInstruction(parameters[RegsLoc2])
+
 	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
-		Offset: currPC,
-		Lbl:    label,
-		Data:   true,
+		InFileOffset: currPC,
+		Offset:       offset,
+		Lbl:          label,
+		Data:         true,
 	})
 	// set 0 STORE instructions can handle real number they will later get replaced by the relocation
 
