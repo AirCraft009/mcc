@@ -88,12 +88,12 @@ func checkOffsetInstruction(rawInstruction string) (string, uint16) {
 		return rawInstruction, 0
 	}
 
-	offset, err := strconv.Atoi(parts[1])
+	offset, err := strconv.Atoi(strings.TrimSpace(parts[1]))
 	if err != nil {
 		log.Fatalf("Illegal instruction: %s\nNot a valid number after the offset signifier '+'\nerror: %s", rawInstruction, err.Error())
 	}
 
-	return rawInstruction, uint16(offset)
+	return strings.TrimSpace(parts[0]), uint16(offset)
 }
 
 // firstPass
