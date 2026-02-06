@@ -27,10 +27,11 @@
 | └─ gobal             | 1B            | symbol-global | 1 for a global and 0 for a local symbol                             |
 | -                    | -             | -             | the previous three fields are repeated for every symbol in the code |
 | symbols + symbol-len | reloc-len     | reloc-table   | contains information necesarry to resolving addresses               |
-| ├─ offset            | 2B            | rel-offset    | the offset in the local data                                        |
 | ├─ len               | 1B            | rel-label-len | the lenght of the label in str form                                 |
-| └─ label             | rel-label-len | rel-label     | the name of the relocation entry                                    |
+| ├─ label             | rel-label-len | rel-label     | the name of the relocation entry                                    |
+| └─ offset            | 2B            | rel-offset    | the offset in the local data                                        |
 | -                    | -             | -             | the previous three fields are repeated for every relocation entry   |
+|                      |               |               |                                                                     |
 
 - All numbers are encoded in little endian
 
