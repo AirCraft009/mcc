@@ -76,7 +76,7 @@ func checkLabel(rawLabel string) (string, error) {
 // STOREB RO [a+16]
 //
 // returns "a", 16
-func checkOffsetInstruction(rawInstruction string) (string, uint16) {
+func checkOffsetInstruction(rawInstruction string) (string, int32) {
 	if !strings.HasPrefix(rawInstruction, "[") || !strings.HasSuffix(rawInstruction, "]") {
 		return rawInstruction, 0
 	}
@@ -93,7 +93,7 @@ func checkOffsetInstruction(rawInstruction string) (string, uint16) {
 		log.Fatalf("Illegal instruction: %s\nNot a valid number after the offset signifier '+'\nerror: %s", rawInstruction, err.Error())
 	}
 
-	return strings.TrimSpace(parts[0]), uint16(offset)
+	return strings.TrimSpace(parts[0]), int32(offset)
 }
 
 // firstPass
@@ -144,8 +144,9 @@ func (parser *Parser) firstPass(data [][]string, logger *log.Logger) [][]string 
 			helper.FatalWrapper(logger, "Unknown offset")
 		}
 		if labelType == dataLabel {
-			logger.Println(activeLabel)
-			logger.Println(PC)
+			logger.Println("label: ", activeLabel)
+			logger.Println("Instruction: ", line)
+			logger.Println("PC: ", PC)
 			helper.FatalWrapper(logger, "Tried to write Code to Data-label")
 		}
 		PC += uint16(ad)

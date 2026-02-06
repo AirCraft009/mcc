@@ -151,7 +151,7 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 		if err != nil {
 			return nil, err
 		}
-		var offset uint16
+		var offset int32
 		if err = binary.Read(r, binary.LittleEndian, &offset); err != nil {
 			return nil, err
 		}

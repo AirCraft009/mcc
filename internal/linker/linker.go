@@ -62,7 +62,7 @@ func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, Datasection []byte, deb
 			}
 			logger.Printf("Linking label: %s to addr: %d\n", relo.Lbl, symbol)
 
-			hi, lo := helper.EncodeAddr(symbol + relo.Offset)
+			hi, lo := helper.EncodeAddr(uint16(int32(symbol) + relo.Offset))
 			objFile.Code[relo.InFileOffset] = hi
 			objFile.Code[relo.InFileOffset+1] = lo
 		}

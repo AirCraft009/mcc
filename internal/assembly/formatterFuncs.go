@@ -2,6 +2,7 @@ package assembly
 
 import (
 	"errors"
+	"log"
 	"strconv"
 
 	"github.com/AirCraft009/mcc/internal/helper"
@@ -19,7 +20,7 @@ import (
 // - LOADB
 // - LOADW
 // - LOAD
-func StoreLoadFormatter(parameters []string, activeLabel string, currPC uint16, parser *Parser) (newParams []string, affectsPC bool) {
+func StoreLoadFormatter(parameters []string, activeLabel string, currPC uint16, parser *Parser) ([]string, bool) {
 
 	//STOREB R1 start
 	// loc0 RegsLoc1 RegsLoc2
@@ -27,19 +28,28 @@ func StoreLoadFormatter(parameters []string, activeLabel string, currPC uint16, 
 	// currPC has to point to exactly where the reloc is
 	// currently at STOREB
 	// + AddrOutLocHi it points to the label start
+	if len(parameters) != 3 {
+		log.Printf("MCC-WARN: %s seems to be malformed as it only has %d slots instead of 3", parameters, len(parameters))
+		// will be caught later in the parser
+		return parameters, true
+	}
 
 	currPC += AddrOutLocHi
-	label, err := checkLabel(parameters[RegsLoc2])
+	label, offset := checkOffsetInstruction(parameters[RegsLoc2])
+	//fmt.Println("label: ", label, offset)
+	rawLabel, err := checkLabel(label)
+	//fmt.Println("rawLabel: ", rawLabel, err)
 	if err != nil {
+		parameters[RegsLoc2] = label
+		parameters = append(parameters, strconv.Itoa(int(offset)))
 		// Label is a number or Register
 		return parameters, true
 	}
-	label, offset := checkOffsetInstruction(parameters[RegsLoc2])
 
 	parser.ObjFile.Relocs = append(parser.ObjFile.Relocs, pkg.RelocationEntry{
 		InFileOffset: currPC,
 		Offset:       offset,
-		Lbl:          label,
+		Lbl:          rawLabel,
 		Data:         true,
 	})
 	// set 0 STORE instructions can handle real number they will later get replaced by the relocation

@@ -22,22 +22,25 @@ func parseFormatOP(parameters []string, currPC uint16, parser *Parser) (pc uint1
 
 func parseFormatOPRegAddr(parameters []string, currPC uint16, parser *Parser) (pc uint16, code []byte, syntax error) {
 	var rx, ry byte
-	code = make([]byte, 3)
+	code = make([]byte, 3, 5)
 	code[OpCLoc] = pkg.OpCodes[parameters[OpCLoc]]
 	rx = pkg.RegMap[parameters[RegsLoc1]]
 	ry, ok := pkg.RegMap[parameters[RegsLoc2]]
 	code[RegsLocOut], code[RegsLocOut+RegWidthOffset] = helper.EncodeRegs(rx, ry, !ok)
+	var addr int
 	if !ok {
-		addr, syntax := strconv.Atoi(parameters[AddrLoc2])
-		if syntax != nil {
-			panic("syntax error: " + syntax.Error())
-		}
-		hi, lo := helper.EncodeAddr(uint16(addr))
-		code = append(code, hi, lo)
+		addr, syntax = strconv.Atoi(parameters[AddrLoc2])
+
 	} else {
-		hi, lo := helper.EncodeAddr(uint16(0))
-		code = append(code, hi, lo)
+		addr, syntax = strconv.Atoi(parameters[StrLoc])
+		//fmt.Printf("adding addr: %d at PC: %d\n", uint16(addr), currPC)
 	}
+	if syntax != nil {
+		return currPC, code, syntax
+	}
+	hi, lo := helper.EncodeAddr(uint16(addr))
+
+	code = append(code, hi, lo)
 	currPC += uint16(len(code))
 	return currPC, code, syntax
 }

@@ -28,7 +28,7 @@ type ObjectFile struct {
 // Data - The label is a data label and belongs in bss/data section
 type RelocationEntry struct {
 	InFileOffset uint16 // Where in Code the label is called/JMP'd to
-	Offset       uint16
+	Offset       int32
 	Lbl          string
 	Data         bool
 }

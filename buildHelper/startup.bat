@@ -24,7 +24,7 @@ pushd "%BASEDIR%\lib\include\sources"
 
 for %%F in (*.asm) do (
     echo Compiling include %%F
-    "%MCC%" -i "%%F" -o "%BASEDIR%\lib\include\obj\%%~nF.obj" -n=true
+    "%MCC%" -i "%%F" -o "%BASEDIR%\lib\include\obj\%%~nF.obj" -n=true -s=true
 )
 
 popd
