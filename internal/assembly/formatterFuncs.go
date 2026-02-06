@@ -74,8 +74,8 @@ func WordFormatter(parameters []string, activeLabel string, currPC uint16, parse
 	} else {
 		data = append(data, hi, lo)
 	}
-
-	return []string{}, false
+	parser.ObjFile.InitData[activeLabel] = data
+	return parameters, false
 }
 
 // ByteFormatter
@@ -100,5 +100,6 @@ func ByteFormatter(parameters []string, activeLabel string, currPC uint16, parse
 	}
 
 	parser.ObjFile.InitData[activeLabel] = data
-	return []string{}, false
+	//fmt.Println(data)
+	return parameters, false
 }
