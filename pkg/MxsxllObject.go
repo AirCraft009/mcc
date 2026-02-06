@@ -54,7 +54,7 @@ func SaveObjectFile(obj *ObjectFile, w io.Writer) error {
 
 	// relocs
 	for _, r := range obj.Relocs {
-		if err := helper.WriteKV(w, r.Lbl, r.Offset); err != nil {
+		if err := helper.WriteKV(w, r.Lbl, r.InFileOffset); err != nil {
 			return err
 		}
 		var d byte
@@ -151,9 +151,9 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 		var d byte
 		binary.Read(r, binary.LittleEndian, &d)
 		relocs[i] = RelocationEntry{
-			Lbl:    name,
-			Offset: off,
-			Data:   d == 1,
+			Lbl:          name,
+			InFileOffset: off,
+			Data:         d == 1,
 		}
 	}
 

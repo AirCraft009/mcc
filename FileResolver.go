@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -29,10 +30,10 @@ type FSHelper struct {
 // InitFSHelper
 //
 // Create a new FSHelper
-func InitFSHelper() *FSHelper {
+func InitFSHelper(logger *log.Logger) *FSHelper {
 	wdPath, err := os.Getwd()
 	if err != nil {
-		panic(err.Error())
+		helper.FatalWrapper(logger, err.Error())
 	}
 	stdlibPath := filepath.Join(helper.GetRootPath(), mcc_constants.StdLibLocationUse)
 
@@ -81,8 +82,4 @@ func (FS *FSHelper) ResolveReadFile(path string) ([]byte, error) {
 
 	// real absolute path
 	return os.ReadFile(path)
-}
-
-func (FS *FSHelper) ResolveGlobal() {
-
 }

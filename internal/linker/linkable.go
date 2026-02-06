@@ -2,7 +2,7 @@ package linker
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -151,18 +151,18 @@ func (link *Linkables) SetPtr(val uint32) {
 	atomic.StoreUint32(&link.ptr, val)
 }
 
-func (link *Linkables) formatObjectFiles(outPath string, write, verbose bool) (objectFiles map[*pkg.ObjectFile]uint16, err error) {
+func (link *Linkables) formatObjectFiles(outPath string, write bool, logger *log.Logger) (objectFiles map[*pkg.ObjectFile]uint16, err error) {
 	locations := make(map[uint16]uint16)
 	objFiles := make(map[*pkg.ObjectFile]uint16)
 
 	for _, file := range link.Files {
-		if verbose {
-			fmt.Printf("Handling file %s\n", file.Path)
-		}
+
+		logger.Printf("Handling file %s\n", file.Path)
 
 		if file.FileT == HeaderF {
 			continue
 		}
+
 		var objFile *pkg.ObjectFile
 		if file.FileT == ObjectF {
 			objFile, err = pkg.FormatObjectFile(file.Data)
@@ -171,11 +171,13 @@ func (link *Linkables) formatObjectFiles(outPath string, write, verbose bool) (o
 			}
 
 		} else {
-			objFile = assembly.AssembleAndWrite(string(file.Data), outPath, write)
+			objFile = assembly.AssembleAndWrite(string(file.Data), outPath, write, logger)
 		}
 
 		// is location already used by another file
 		if value, ok := locations[file.Location]; ok {
+			logger.Printf("Location conflict %s\n", file.Path)
+
 			objFiles[objFile] = file.Location + value
 			locations[file.Location] = uint16(len(objFile.Code)) + value
 
@@ -189,8 +191,8 @@ func (link *Linkables) formatObjectFiles(outPath string, write, verbose bool) (o
 	return objFiles, nil
 }
 
-func (link *Linkables) GetObjectFiles(outPath string, write, verbose bool) (objectFiles map[*pkg.ObjectFile]uint16, data []byte, err error) {
-	objectFiles, err = link.formatObjectFiles(outPath, write, verbose)
+func (link *Linkables) GetObjectFiles(outPath string, write bool, logger *log.Logger) (objectFiles map[*pkg.ObjectFile]uint16, data []byte, err error) {
+	objectFiles, err = link.formatObjectFiles(outPath, write, logger)
 	if err != nil {
 		return nil, nil, err
 	}

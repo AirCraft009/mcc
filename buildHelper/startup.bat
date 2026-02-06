@@ -14,7 +14,7 @@ pushd "%BASEDIR%lib\stdlib\sources"
 
 for %%F in (*.asm) do (
     echo Compiling stdlib %%F
-    "%MCC%" -i "%%F" -o "%BASEDIR%lib\stdlib\obj\%%~nF.obj" -n=true
+    "%MCC%" -i "%%F" -o "%BASEDIR%lib\stdlib\obj\%%~nF.obj" -n=true -s=true
 )
 
 popd

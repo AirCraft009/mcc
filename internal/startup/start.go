@@ -1,96 +1,89 @@
 package startup
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/AirCraft009/mcc"
+	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/internal/linker"
 	preprocessor "github.com/AirCraft009/mcc/internal/pre-processor"
 )
 
-func NoLinking(inputFile, outPath string, verbose bool) {
+func NoLinking(inputFile, outPath string, logger *log.Logger) {
 
 	locations := make([]uint16, 1)
 	includes := make([]string, 1)
 
 	includes[0] = inputFile
-	fileSysHelper := mcc.InitFSHelper()
+	fileSysHelper := mcc.InitFSHelper(logger)
 
 	linker.IncludeHeaders(&includes, &locations)
-	if verbose {
-		fmt.Println("collected includes: ", includes)
-	}
+	logger.Println("collected includes: ", includes)
+
 	link := linker.NewLinkables(len(includes))
 	err := link.AddArraysMultiThreaded(includes, locations, fileSysHelper)
 
 	if err != nil {
-		panic(err.Error())
+		helper.FatalWrapper(logger, err.Error())
 	}
 
 	pre := preprocessor.NewPreProcesser()
 	pre.Process(link)
-	objs, _, err := link.GetObjectFiles(outPath, true, verbose)
+	objs, _, err := link.GetObjectFiles(outPath, true, logger)
 
 	if err != nil {
-		panic(err.Error())
+		helper.FatalWrapper(logger, err.Error())
 	}
 	// files still get written is just marked
 	if len(objs) != 1 {
-		panic("Expected 1 object got " + strconv.Itoa(len(objs)))
+		helper.FatalWrapper(logger, "Expected 1 object got "+strconv.Itoa(len(objs)))
 	}
 
 	return
 }
 
-func NormalProcess(inputFile string, debug, resolution, verbose bool) ([]byte, map[uint16]string) {
-	if verbose {
-		fmt.Println("starting linking assembly")
-		fmt.Println("finding includes")
-	}
-	fileSysHelper := mcc.InitFSHelper()
+func NormalProcess(inputFile string, logger *log.Logger, debug, resolution bool) ([]byte, map[uint16]string) {
+	logger.Println("starting linking assembly")
+	logger.Println("finding includes")
+
+	fileSysHelper := mcc.InitFSHelper(logger)
 	includes, locations, err := linker.FindIncludes(inputFile, fileSysHelper)
 
 	if err != nil {
 		fileSysHelper.OutputVirtualFS()
 		panic(err.Error())
 	}
-	if verbose {
-		fmt.Println("collected includes: ", includes)
-	}
+	logger.Println("collected includes: ", includes)
 
 	link := linker.NewLinkables(len(includes))
-	if verbose {
-		fmt.Println("Adding files to linker")
-	}
+
+	logger.Println("Adding files to linker")
 	err = link.AddArraysMultiThreaded(includes, locations, fileSysHelper)
 
 	if err != nil {
 		panic(err.Error())
 	}
 
-	if verbose {
-		fmt.Println("Successfully added files to linker")
-		fmt.Println("starting preprocessing")
-	}
+	logger.Println("Successfully added files to linker")
+	logger.Println("starting preprocessing")
 
 	pre := preprocessor.NewPreProcesser()
 	pre.Process(link)
 
-	if verbose {
-		fmt.Println("finished preprocessing")
-		fmt.Println("Assembling into Object Files")
-	}
-	objs, data, err := link.GetObjectFiles("", false, verbose)
+	logger.Println("finished preprocessing")
+	logger.Println("Assembling into Object Files")
+
+	objs, data, err := link.GetObjectFiles("", false, logger)
 
 	if err != nil {
 		panic(err.Error())
 	}
-	if verbose {
-		fmt.Println("Successfully made Object Files")
-		fmt.Println("Starting linking")
-	}
-	code, debugLabels, err := linker.LinkModules(objs, data, debug, resolution, verbose)
+
+	logger.Println("Successfully made Object Files")
+	logger.Println("Starting linking")
+
+	code, debugLabels, err := linker.LinkModules(objs, data, debug, resolution, logger)
 	if err != nil {
 		panic(err.Error())
 	}

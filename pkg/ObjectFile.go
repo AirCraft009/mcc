@@ -22,13 +22,15 @@ type ObjectFile struct {
 // RelocationEntry
 //
 // Used for relocating labels to addr
-// Offset - the offset in the file
+// InFileOffset - the offset in the file
+// Offset - how far into the addr space
 // Lbl - The label-name
 // Data - The label is a data label and belongs in bss/data section
 type RelocationEntry struct {
-	Offset uint16 // Where in Code the label is called/JMP'd to
-	Lbl    string
-	Data   bool
+	InFileOffset uint16 // Where in Code the label is called/JMP'd to
+	Offset       uint16
+	Lbl          string
+	Data         bool
 }
 
 // NewObjectFile

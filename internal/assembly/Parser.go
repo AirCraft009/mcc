@@ -5,11 +5,12 @@ package assembly
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
 )
 
@@ -66,10 +67,39 @@ func checkLabel(rawLabel string) (string, error) {
 	return rawLabel, nil
 }
 
+// checkOffsetInstruction
+//
+// returns the label and offset from the
+// assembler directive [label + off]
+//
+// example:
+// STOREB RO [a+16]
+//
+// returns "a", 16
+func checkOffsetInstruction(rawInstruction string) (string, uint16) {
+	if !strings.HasPrefix(rawInstruction, "[") || !strings.HasSuffix(rawInstruction, "]") {
+		return rawInstruction, 0
+	}
+
+	instr := rawInstruction[1 : len(rawInstruction)-1]
+	parts := strings.Split(instr, "+")
+	if len(parts) != 2 {
+		log.Printf("Instruction with square brackets but no offset instruction: %s\n", rawInstruction)
+		return rawInstruction, 0
+	}
+
+	offset, err := strconv.Atoi(parts[1])
+	if err != nil {
+		log.Fatalf("Illegal instruction: %s\nNot a valid number after the offset signifier '+'\nerror: %s", rawInstruction, err.Error())
+	}
+
+	return rawInstruction, uint16(offset)
+}
+
 // firstPass
 //
 // seperates out labels and their Addresses
-func (parser *Parser) firstPass(data [][]string) [][]string {
+func (parser *Parser) firstPass(data [][]string, logger *log.Logger) [][]string {
 	var PC uint16
 	var activeLabel string
 	var labelType LableT
@@ -92,9 +122,9 @@ func (parser *Parser) firstPass(data [][]string) [][]string {
 			// check for formatters (smth that arranges code in other ways
 		} else if actFormatter, ok := parser.Formatter[line[0]]; ok {
 			if labelType == codeLabel {
-				fmt.Println(activeLabel)
-				fmt.Println(PC)
-				panic("mixing Data label & Code labels")
+				logger.Println(activeLabel)
+				logger.Println(PC)
+				helper.FatalWrapper(logger, "Tried to write Data to Code-label")
 			}
 			formatted, affectsPC := actFormatter(data[i], activeLabel, PC, parser)
 			line = formatted
@@ -109,14 +139,14 @@ func (parser *Parser) firstPass(data [][]string) [][]string {
 
 		ad, ok := pkg.OffsetMap[line[0]]
 		if !ok {
-			fmt.Println(line[0])
-			fmt.Println(PC)
-			panic("unknown Offset")
+			logger.Println(line[0])
+			logger.Println(PC)
+			helper.FatalWrapper(logger, "Unknown offset")
 		}
 		if labelType == dataLabel {
-			fmt.Println(activeLabel)
-			fmt.Println(PC)
-			panic("mixing Data label & Code labels")
+			logger.Println(activeLabel)
+			logger.Println(PC)
+			helper.FatalWrapper(logger, "Tried to write Code to Data-label")
 		}
 		PC += uint16(ad)
 	}
@@ -124,7 +154,7 @@ func (parser *Parser) firstPass(data [][]string) [][]string {
 	return data
 }
 
-func (parser *Parser) secondPass(data [][]string) (ObjFile *pkg.ObjectFile) {
+func (parser *Parser) secondPass(data [][]string, logger *log.Logger) (ObjFile *pkg.ObjectFile) {
 	code := make([]byte, 0)
 
 	PC := uint16(0)
@@ -134,7 +164,7 @@ func (parser *Parser) secondPass(data [][]string) (ObjFile *pkg.ObjectFile) {
 			var err error
 			PC, codeSnippet, err = parsfunc(line, PC, parser)
 			if err != nil {
-				panic(err)
+				helper.FatalWrapper(logger, err.Error())
 			}
 			code = append(code, codeSnippet...)
 		}
@@ -149,29 +179,29 @@ func (parser *Parser) secondPass(data [][]string) (ObjFile *pkg.ObjectFile) {
 // That conatins The bytecode with non relocated labels
 // It first parses all lables to relocate,
 // then finishes compiling into bytecode
-func Assemble(data string) *pkg.ObjectFile {
+func Assemble(data string, logger *log.Logger) *pkg.ObjectFile {
 	parsedData := parseLines(data)
 	parser := newParser()
 	var formattedData [][]string
-	formattedData = parser.firstPass(parsedData)
+	formattedData = parser.firstPass(parsedData, logger)
 
-	return parser.secondPass(formattedData)
+	return parser.secondPass(formattedData, logger)
 }
 
 // AssembleAndWrite assembles string asm files and writes them if wanted
-func AssembleAndWrite(data, path string, write bool) *pkg.ObjectFile {
-	ObjFile := Assemble(data)
+func AssembleAndWrite(data, path string, write bool, logger *log.Logger) *pkg.ObjectFile {
+	ObjFile := Assemble(data, logger)
 
 	if write {
 		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
-			panic(err)
+			helper.FatalWrapper(logger, err.Error())
 		}
 		defer f.Close()
 
 		err = pkg.SaveObjectFile(ObjFile, f)
 		if err != nil {
-			panic(err)
+			helper.FatalWrapper(logger, err.Error())
 		}
 	}
 	return ObjFile

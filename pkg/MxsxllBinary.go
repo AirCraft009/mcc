@@ -5,17 +5,20 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"sort"
+
+	"github.com/AirCraft009/mcc/internal/helper"
 )
 
 const MagicObject = "MXBO"
 const MagicBinary = "MXBI"
 const BinHeaderLen = len(MagicBinary) + 3
 
-func FormatMxBinary(code []byte, debugSymbols map[uint16]string, debug bool) (data []byte) {
+func FormatMxBinary(code []byte, debugSymbols map[uint16]string, logger *log.Logger, debug bool) (data []byte) {
 	if len(code) != MemorySize {
-		panic(fmt.Errorf("invalid code length: %d", len(code)))
+		helper.FatalFWrapper(logger, "invalid code length: %d", len(code))
 	}
 	var buf bytes.Buffer = *bytes.NewBuffer(make([]byte, 0, len(code)+MemorySize+BinHeaderLen))
 
@@ -58,8 +61,8 @@ func FormatMxBinary(code []byte, debugSymbols map[uint16]string, debug bool) (da
 	return buf.Bytes()
 }
 
-func WriteMxBinary(outputFile string, code []byte, debugSymbols map[uint16]string, debug bool) (err error) {
-	data := FormatMxBinary(code, debugSymbols, debug)
+func WriteMxBinary(outputFile string, code []byte, debugSymbols map[uint16]string, logger *log.Logger, debug bool) (err error) {
+	data := FormatMxBinary(code, debugSymbols, logger, debug)
 	err = os.WriteFile(outputFile, data, 0644)
 	if err != nil {
 		return err
