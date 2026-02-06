@@ -9,7 +9,7 @@ Neither a compiler nor a collection
 
 ## Usage
 
-- mcc inputfile -o Outputfile
+- mcc -i inputfile -o Outputfile 
 
 ## Build
 
