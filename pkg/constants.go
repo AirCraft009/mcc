@@ -52,4 +52,7 @@ const (
 
 	ExtraEnd  = 0xFFFF
 	ExtraSize = ExtraEnd - ExtraStart
+
+	SPRegister = 56
+	PCRegister = 57
 )

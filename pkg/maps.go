@@ -125,8 +125,8 @@ var RegMap = map[string]byte{
 	"K13": 53,
 	"K14": 54,
 	"K15": 55,
-	"SS":  56, //beginn of the String section of the temp inputstring
-	"SL":  57, //location of the temp inputstring lenght
+	"SP":  56, //beginn of the String section of the temp inputstring
+	"PC":  57, //location of the temp inputstring lenght
 	"OR":  58, // offset register
 	"VS":  59, // holds the lenght/size of the video-char table
 	"RLL": 60, // holds the current roll val
