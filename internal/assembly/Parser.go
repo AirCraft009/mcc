@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -82,7 +83,7 @@ func checkOffsetInstruction(rawInstruction string) (string, int32) {
 	}
 
 	instr := rawInstruction[1 : len(rawInstruction)-1]
-	parts := strings.Split(instr, "+")
+	parts := regexp.MustCompile("[+-]").Split(instr, 2)
 	if len(parts) != 2 {
 		log.Printf("Instruction with square brackets but no offset instruction: %s\n", rawInstruction)
 		return rawInstruction, 0
@@ -91,6 +92,9 @@ func checkOffsetInstruction(rawInstruction string) (string, int32) {
 	offset, err := strconv.Atoi(strings.TrimSpace(parts[1]))
 	if err != nil {
 		log.Fatalf("Illegal instruction: %s\nNot a valid number after the offset signifier '+'\nerror: %s", rawInstruction, err.Error())
+	}
+	if strings.Contains(rawInstruction, "-") {
+		offset = offset * -1
 	}
 
 	return strings.TrimSpace(parts[0]), int32(offset)
