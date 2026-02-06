@@ -6,7 +6,8 @@ import (
 	"errors"
 	"io"
 	"os"
-	"sort"
+
+	"github.com/AirCraft009/mcc/internal/helper"
 )
 
 func SaveObjectFile(obj *ObjectFile, w io.Writer) error {
@@ -37,9 +38,9 @@ func SaveObjectFile(obj *ObjectFile, w io.Writer) error {
 	}
 
 	// symbols (sorted)
-	names, addrs := getSortedKeyVal(obj.Symbols)
+	names, addrs := helper.GetSortedKeyVal(obj.Symbols)
 	for i := range names {
-		if err := writeKV(w, names[i], addrs[i]); err != nil {
+		if err := helper.WriteKV(w, names[i], addrs[i]); err != nil {
 			return err
 		}
 		var g byte
@@ -53,7 +54,7 @@ func SaveObjectFile(obj *ObjectFile, w io.Writer) error {
 
 	// relocs
 	for _, r := range obj.Relocs {
-		if err := writeKV(w, r.Lbl, r.Offset); err != nil {
+		if err := helper.WriteKV(w, r.Lbl, r.Offset); err != nil {
 			return err
 		}
 		var d byte
@@ -66,15 +67,15 @@ func SaveObjectFile(obj *ObjectFile, w io.Writer) error {
 	}
 
 	// BSS
-	bssNames, bssSizes := getSortedKeyVal(obj.BssSections)
+	bssNames, bssSizes := helper.GetSortedKeyVal(obj.BssSections)
 	for i := range bssNames {
-		if err := writeKV(w, bssNames[i], bssSizes[i]); err != nil {
+		if err := helper.WriteKV(w, bssNames[i], bssSizes[i]); err != nil {
 			return err
 		}
 	}
 
 	// init data
-	initNames, initVals := getSortedKeyVal(obj.InitData)
+	initNames, initVals := helper.GetSortedKeyVal(obj.InitData)
 	for i := range initNames {
 		name := initNames[i]
 		val := initVals[i]
@@ -131,7 +132,7 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 	globals := make(map[uint16]bool)
 
 	for i := 0; i < int(symbolCount); i++ {
-		name, addr, err := readKV[uint16](r)
+		name, addr, err := helper.ReadKV[uint16](r)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +144,7 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 
 	relocs := make([]RelocationEntry, relocCount)
 	for i := 0; i < int(relocCount); i++ {
-		name, off, err := readKV[uint16](r)
+		name, off, err := helper.ReadKV[uint16](r)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +159,7 @@ func FormatObjectFile(data []byte) (*ObjectFile, error) {
 
 	bss := make(map[string]uint16, bssCount)
 	for i := 0; i < int(bssCount); i++ {
-		name, size, err := readKV[uint16](r)
+		name, size, err := helper.ReadKV[uint16](r)
 		if err != nil {
 			return nil, err
 		}
@@ -198,55 +199,4 @@ func ReadObjectFile(path string) (*ObjectFile, error) {
 		return nil, err
 	}
 	return FormatObjectFile(data)
-}
-
-// Helpers - For writing binary data
-
-func getSortedKeyVal[V any](m map[string]V) ([]string, []V) {
-	sortedKeys := make([]string, 0, len(m))
-	sortedValues := make([]V, 0, len(m))
-
-	for k, _ := range m {
-		sortedKeys = append(sortedKeys, k)
-	}
-
-	sort.Strings(sortedKeys)
-	for _, k := range sortedKeys {
-		sortedValues = append(sortedValues, m[k])
-	}
-	return sortedKeys, sortedValues
-}
-
-func writeKV[V any](w io.Writer, key string, val V) error {
-	if len(key) > 255 {
-		return errors.New("key too long")
-	}
-	if err := binary.Write(w, binary.LittleEndian, uint8(len(key))); err != nil {
-		return err
-	}
-	if _, err := w.Write([]byte(key)); err != nil {
-		return err
-	}
-	return binary.Write(w, binary.LittleEndian, val)
-}
-
-func readKV[V any](r io.Reader) (string, V, error) {
-	var n uint8
-	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
-		var zero V
-		return "", zero, err
-	}
-
-	name := make([]byte, n)
-	if _, err := io.ReadFull(r, name); err != nil {
-		var zero V
-		return "", zero, err
-	}
-
-	var val V
-	if err := binary.Read(r, binary.LittleEndian, &val); err != nil {
-		return "", val, err
-	}
-
-	return string(name), val, nil
 }

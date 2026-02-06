@@ -31,7 +31,7 @@ func defineGlobalLookupTable(objectFiles map[*pkg.ObjectFile]uint16) (globalLook
 	return globalLookupTable
 }
 
-func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, debug, objectResolution, verbose bool) (code []byte, debugLocations map[uint16]string, err error) {
+func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, Datasection []byte, debug, objectResolution, verbose bool) (code []byte, debugLocations map[uint16]string, err error) {
 	//debug locations are only necesarry if the debugger is used can be discarded otherwise
 	finalCode := make([]byte, pkg.MemorySize)
 	if debug {
@@ -85,5 +85,8 @@ func LinkModules(objectFiles map[*pkg.ObjectFile]uint16, debug, objectResolution
 		}
 
 	}
+
+	//fmt.Println("final code", Datasection)
+	copy(finalCode[pkg.DataStart:pkg.DataEnd+1], Datasection)
 	return finalCode, debugLocations, nil
 }

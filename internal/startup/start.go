@@ -30,7 +30,7 @@ func NoLinking(inputFile, outPath string, verbose bool) {
 
 	pre := preprocessor.NewPreProcesser()
 	pre.Process(link)
-	objs, err := link.GetObjectFiles(outPath, true, verbose)
+	objs, _, err := link.GetObjectFiles(outPath, true, verbose)
 
 	if err != nil {
 		panic(err.Error())
@@ -81,7 +81,7 @@ func NormalProcess(inputFile string, debug, resolution, verbose bool) ([]byte, m
 		fmt.Println("finished preprocessing")
 		fmt.Println("Assembling into Object Files")
 	}
-	objs, err := link.GetObjectFiles("", false, verbose)
+	objs, data, err := link.GetObjectFiles("", false, verbose)
 
 	if err != nil {
 		panic(err.Error())
@@ -90,7 +90,7 @@ func NormalProcess(inputFile string, debug, resolution, verbose bool) ([]byte, m
 		fmt.Println("Successfully made Object Files")
 		fmt.Println("Starting linking")
 	}
-	code, debugLabels, err := linker.LinkModules(objs, debug, resolution, verbose)
+	code, debugLabels, err := linker.LinkModules(objs, data, debug, resolution, verbose)
 	if err != nil {
 		panic(err.Error())
 	}

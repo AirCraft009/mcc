@@ -10,6 +10,7 @@ import (
 	"github.com/AirCraft009/mcc"
 	"github.com/AirCraft009/mcc/internal/assembly"
 	"github.com/AirCraft009/mcc/internal/helper"
+	"github.com/AirCraft009/mcc/internal/loader"
 	"github.com/AirCraft009/mcc/pkg"
 
 	"golang.org/x/sync/errgroup"
@@ -150,7 +151,7 @@ func (link *Linkables) SetPtr(val uint32) {
 	atomic.StoreUint32(&link.ptr, val)
 }
 
-func (link *Linkables) GetObjectFiles(outPath string, write, verbose bool) (objectFiles map[*pkg.ObjectFile]uint16, err error) {
+func (link *Linkables) formatObjectFiles(outPath string, write, verbose bool) (objectFiles map[*pkg.ObjectFile]uint16, err error) {
 	locations := make(map[uint16]uint16)
 	objFiles := make(map[*pkg.ObjectFile]uint16)
 
@@ -186,4 +187,20 @@ func (link *Linkables) GetObjectFiles(outPath string, write, verbose bool) (obje
 	}
 
 	return objFiles, nil
+}
+
+func (link *Linkables) GetObjectFiles(outPath string, write, verbose bool) (objectFiles map[*pkg.ObjectFile]uint16, data []byte, err error) {
+	objectFiles, err = link.formatObjectFiles(outPath, write, verbose)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var objF = make([]*pkg.ObjectFile, 0, len(objectFiles))
+	for obj, _ := range objectFiles {
+		objF = append(objF, obj)
+	}
+
+	data = loader.LoadData(objF)
+
+	return objectFiles, data, nil
 }

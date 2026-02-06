@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
 )
 
@@ -14,67 +15,85 @@ Plan
 */
 
 type loader struct {
-	DataRelocs  [][]pkg.RelocationEntry
-	BssPtr      uint16
-	DataPtr     uint16
-	DataValues  []byte
-	BssSections map[string]uint16
-	InitData    map[string][]byte
+	BssPtr          uint16
+	DataPtr         uint16
+	DataValues      []byte
+	BssSections     map[string]uint16
+	InitData        map[string][]byte
+	BSSRelocations  map[string]uint16
+	DataRelocations map[string]uint16
 }
 
-func LoadData(objs []*pkg.ObjectFile) {
+func LoadData(objs []*pkg.ObjectFile) (data []byte) {
 	DatLoader := parseObjs(objs)
 	DatLoader.setRelocs()
-	for i, obj := range objs {
-		for _, reloc := range DatLoader.DataRelocs[i] {
-			obj.Symbols[reloc.Lbl] = reloc.Offset
+	for _, obj := range objs {
+		for lbl, addr := range DatLoader.BSSRelocations {
+			obj.Symbols[lbl] = addr
+			//fmt.Println("inside loader: ", lbl, addr)
 		}
+		for lbl, addr := range DatLoader.DataRelocations {
+			obj.Symbols[lbl] = addr
+			//fmt.Println("inside loader: ", lbl, addr)
+		}
+		//fmt.Println(obj.Symbols["a"])
 	}
+	return DatLoader.DataValues
 }
 
 func (l *loader) setRelocs() {
-	for _, relocs := range l.DataRelocs {
-		for _, reloc := range relocs {
-			if !reloc.Data {
-				continue
-			}
 
-			if bssVal, ok := l.BssSections[reloc.Lbl]; ok {
-				reloc.Offset = l.BssPtr
-				l.BssPtr += bssVal
-				if l.BssPtr > pkg.BssSectionEnd {
-					panic("BSS section to large, failed at: " + reloc.Lbl)
-				}
-			} else if DataVal, ok := l.InitData[reloc.Lbl]; ok {
-				reloc.Offset = l.DataPtr
-				l.DataValues = append(l.DataValues, DataVal...)
-				l.DataPtr += uint16(len(DataVal))
-				if l.DataPtr > pkg.DataEnd {
-					panic("Data section to large, failed at: " + reloc.Lbl)
-				}
-			}
+	bssLabels, ammounts := helper.GetSortedKeyVal(l.BssSections)
+	dataLabels, dataPoints := helper.GetSortedKeyVal(l.InitData)
+
+	for i := range len(ammounts) {
+		bsslbl, ammount := bssLabels[i], ammounts[i]
+		//fmt.Println("bsslbl", bsslbl)
+		//fmt.Println("ammount", ammount)
+		//fmt.Println("ptr", l.BssPtr)
+
+		l.BSSRelocations[bsslbl] = l.BssPtr
+		l.BssPtr += ammount
+		if l.BssPtr > pkg.BssSectionEnd {
+			panic("BSS section to large, failed at: " + bsslbl)
 		}
+
+	}
+
+	for i := range len(dataLabels) {
+		datalbl, data := dataLabels[i], dataPoints[i]
+		//fmt.Println(datalbl, data, l.DataPtr)
+
+		l.DataRelocations[datalbl] = l.DataPtr
+		l.DataPtr += uint16(len(data))
+		l.DataValues = append(l.DataValues, data...)
+		if l.DataPtr > pkg.DataEnd {
+			panic("Data section to large, failed at: " + datalbl)
+		}
+		l.DataValues = append(l.DataValues, data...)
 	}
 
 }
 
 func newLoader(size int) *loader {
 	return &loader{
-		make([][]pkg.RelocationEntry, size),
 		pkg.BssSectionStart,
 		pkg.DataStart,
 		make([]byte, 0, pkg.DataSize),
 		make(map[string]uint16),
 		make(map[string][]byte, size),
+		make(map[string]uint16, size),
+		make(map[string]uint16, size),
 	}
 }
 
 func parseObjs(objs []*pkg.ObjectFile) *loader {
 	DatLoader := newLoader(len(objs))
-	for i, obj := range objs {
-		DatLoader.DataRelocs[i] = obj.Relocs
+
+	for _, obj := range objs {
 		DatLoader.BssSections = combineMaps(DatLoader.BssSections, obj.BssSections)
 		DatLoader.InitData = combineMaps(DatLoader.InitData, obj.InitData)
+		//fmt.Println("InitData", obj.InitData)
 	}
 
 	return DatLoader
