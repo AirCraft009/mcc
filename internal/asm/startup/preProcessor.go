@@ -1,11 +1,11 @@
-package pre_processor
+package startup
 
 import (
 	"fmt"
 	"strings"
 	"sync"
 
-	"github.com/AirCraft009/mcc/internal/linker"
+	"github.com/AirCraft009/mcc/internal/fileHandling"
 )
 
 type PreProcesser struct {
@@ -22,12 +22,12 @@ func NewPreProcesser() *PreProcesser {
 	return &PreProcesser{[]definition{}, sync.Mutex{}}
 }
 
-func (pre *PreProcesser) parseDefinitions(linkable *linker.Linkables) {
+func (pre *PreProcesser) parseDefinitions(linkable *fileHandling.Linkables) {
 	var wg = &sync.WaitGroup{}
 	linkable.SetupDataGathering()
 	linkF, nonNil := linkable.GetFile()
 	for nonNil {
-		if linkF.FileT != linker.HeaderF {
+		if linkF.FileT != fileHandling.HeaderF {
 
 			linkF, nonNil = linkable.GetFile()
 			continue
@@ -35,7 +35,7 @@ func (pre *PreProcesser) parseDefinitions(linkable *linker.Linkables) {
 
 		lf := linkF
 		wg.Add(1)
-		go func(l *linker.LinkFile) {
+		go func(l *fileHandling.LinkFile) {
 			defer wg.Done()
 			findDefinitions(l, pre)
 		}(lf)
@@ -45,7 +45,7 @@ func (pre *PreProcesser) parseDefinitions(linkable *linker.Linkables) {
 	wg.Wait()
 }
 
-func findDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
+func findDefinitions(linkF *fileHandling.LinkFile, pre *PreProcesser) {
 	for _, line := range strings.Split(string(linkF.Data), "\n") {
 		if !strings.HasPrefix(line, "#define ") {
 			continue
@@ -63,7 +63,7 @@ func findDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
 	}
 }
 
-func (pre *PreProcesser) ApplyDefinitions(linkable *linker.Linkables) {
+func (pre *PreProcesser) applyDefinitions(linkable *fileHandling.Linkables) {
 	// parseDefinitions should already have been called
 	linkable.SetupDataGathering()
 	linkF, nonNil := linkable.GetFile()
@@ -71,14 +71,14 @@ func (pre *PreProcesser) ApplyDefinitions(linkable *linker.Linkables) {
 
 	for nonNil {
 
-		if linkF.FileT != linker.AsmF {
+		if linkF.FileT != fileHandling.AsmF {
 			linkF, nonNil = linkable.GetFile()
 			continue
 		}
 
 		lf := linkF
 		wg.Add(1)
-		go func(l *linker.LinkFile) {
+		go func(l *fileHandling.LinkFile) {
 			defer wg.Done()
 			replaceDefinitions(l, pre)
 		}(lf)
@@ -88,14 +88,14 @@ func (pre *PreProcesser) ApplyDefinitions(linkable *linker.Linkables) {
 	wg.Wait()
 }
 
-func (pre *PreProcesser) Process(linkable *linker.Linkables) {
+func (pre *PreProcesser) Process(linkable *fileHandling.Linkables) {
 
 	pre.parseDefinitions(linkable)
-	pre.ApplyDefinitions(linkable)
+	pre.applyDefinitions(linkable)
 
 }
 
-func replaceDefinitions(linkF *linker.LinkFile, pre *PreProcesser) {
+func replaceDefinitions(linkF *fileHandling.LinkFile, pre *PreProcesser) {
 	stringData := string(linkF.Data)
 	for _, definition := range pre.definitions {
 		stringData = strings.ReplaceAll(stringData, definition.placeHolder, definition.value)

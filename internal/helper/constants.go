@@ -1,4 +1,4 @@
-package mcc_constants
+package helper
 
 const (
 	IncludeSignifier        = "#include"

@@ -1,4 +1,4 @@
-package linker
+package assembly
 
 import (
 	"log"

@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/AirCraft009/mcc"
+	linker "github.com/AirCraft009/mcc/internal/asm/assembly"
+	fileHandling2 "github.com/AirCraft009/mcc/internal/fileHandling"
 	"github.com/AirCraft009/mcc/internal/helper"
-	"github.com/AirCraft009/mcc/internal/linker"
-	preprocessor "github.com/AirCraft009/mcc/internal/pre-processor"
 )
 
 func NoLinking(inputFile, outPath string, logger *log.Logger) {
@@ -18,17 +18,17 @@ func NoLinking(inputFile, outPath string, logger *log.Logger) {
 	includes[0] = inputFile
 	fileSysHelper := mcc.InitFSHelper(logger)
 
-	linker.IncludeHeaders(&includes, &locations)
+	fileHandling2.IncludeHeaders(&includes, &locations)
 	logger.Println("collected includes: ", includes)
 
-	link := linker.NewLinkables(len(includes))
+	link := fileHandling2.NewLinkables(len(includes))
 	err := link.AddArraysMultiThreaded(includes, locations, fileSysHelper)
 
 	if err != nil {
 		helper.FatalWrapper(logger, err.Error())
 	}
 
-	pre := preprocessor.NewPreProcesser()
+	pre := NewPreProcesser()
 	pre.Process(link)
 	objs, _, err := link.GetObjectFiles(outPath, true, logger)
 
@@ -48,7 +48,7 @@ func NormalProcess(inputFile string, logger *log.Logger, debug, resolution bool)
 	logger.Println("finding includes")
 
 	fileSysHelper := mcc.InitFSHelper(logger)
-	includes, locations, err := linker.FindIncludes(inputFile, fileSysHelper)
+	includes, locations, err := fileHandling2.FindIncludes(inputFile, fileSysHelper)
 
 	if err != nil {
 		fileSysHelper.OutputVirtualFS()
@@ -56,7 +56,7 @@ func NormalProcess(inputFile string, logger *log.Logger, debug, resolution bool)
 	}
 	logger.Println("collected includes: ", includes)
 
-	link := linker.NewLinkables(len(includes))
+	link := fileHandling2.NewLinkables(len(includes))
 
 	logger.Println("Adding files to linker")
 	err = link.AddArraysMultiThreaded(includes, locations, fileSysHelper)
@@ -68,7 +68,7 @@ func NormalProcess(inputFile string, logger *log.Logger, debug, resolution bool)
 	logger.Println("Successfully added files to linker")
 	logger.Println("starting preprocessing")
 
-	pre := preprocessor.NewPreProcesser()
+	pre := NewPreProcesser()
 	pre.Process(link)
 
 	logger.Println("finished preprocessing")

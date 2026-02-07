@@ -1,4 +1,4 @@
-package assembly
+package assembler
 
 import (
 	"github.com/AirCraft009/mcc/pkg"

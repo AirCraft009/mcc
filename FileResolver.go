@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/AirCraft009/mcc/internal/helper"
-	"github.com/AirCraft009/mcc/internal/mcc-constants"
 )
 
 //go:embed lib/stdlib/obj/*
@@ -35,9 +34,9 @@ func InitFSHelper(logger *log.Logger) *FSHelper {
 	if err != nil {
 		helper.FatalWrapper(logger, err.Error())
 	}
-	stdlibPath := filepath.Join(helper.GetRootPath(), mcc_constants.StdLibLocationUse)
+	stdlibPath := filepath.Join(helper.GetRootPath(), helper.StdLibLocationUse)
 
-	return &FSHelper{wdPath, helper.GetRootPath(), stdlibPath, mcc_constants.StdLibLocationUse, embedFS}
+	return &FSHelper{wdPath, helper.GetRootPath(), stdlibPath, helper.StdLibLocationUse, embedFS}
 }
 
 func (FS *FSHelper) OutputVirtualFS() {
@@ -69,7 +68,7 @@ func (FS *FSHelper) ResolveReadFile(path string) ([]byte, error) {
 	}
 
 	// is in the stdlib
-	if filepath.Clean(filepath.Dir(path)) == mcc_constants.StdLibLocationSignifier {
+	if filepath.Clean(filepath.Dir(path)) == helper.StdLibLocationSignifier {
 		// The files are actually present at the location
 		stdlibFullPath := filepath.Clean(filepath.Join(FS.stdlibPath, filepath.Base(path)))
 		if fileData, err := os.ReadFile(stdlibFullPath); err == nil {

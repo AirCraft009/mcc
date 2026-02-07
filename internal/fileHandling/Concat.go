@@ -1,4 +1,4 @@
-package linker
+package fileHandling
 
 import (
 	"os"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/AirCraft009/mcc"
 	"github.com/AirCraft009/mcc/internal/helper"
-	"github.com/AirCraft009/mcc/internal/mcc-constants"
 	"github.com/AirCraft009/mcc/pkg"
 )
 
@@ -32,13 +31,13 @@ func FindIncludes(filePath string, fsHelp *mcc.FSHelper) (filePaths []string, lo
 		stringData := string(data)
 
 		for _, line := range strings.Split(stringData, "\n") {
-			if !strings.HasPrefix(line, mcc_constants.IncludeSignifier) {
+			if !strings.HasPrefix(line, helper.IncludeSignifier) {
 				continue
 			}
 
 			line = strings.TrimSpace(line)
 			// line should contain the relative path from the line data location to the include data
-			line = strings.TrimSpace(strings.TrimPrefix(line, mcc_constants.IncludeSignifier))
+			line = strings.TrimSpace(strings.TrimPrefix(line, helper.IncludeSignifier))
 			cleanedPath := filepath.Clean(filepath.Join(dir, line))
 			if !uniquePaths.IsExist(cleanedPath) {
 				nextPaths.Enqueue(cleanedPath)
@@ -73,8 +72,8 @@ func includeBaseComponents(filePaths *[]string, locations *[]uint16) {
 	filepathsDe := *filePaths
 
 	rootPath := helper.GetRootPath()
-	tablePath := filepath.Join(rootPath, filepath.Join(mcc_constants.IncludeLocationUse, "/interruptTable.obj"))
-	taskPath := filepath.Join(rootPath, filepath.Join(mcc_constants.IncludeLocationUse, "/scheduling.obj"))
+	tablePath := filepath.Join(rootPath, filepath.Join(helper.IncludeLocationUse, "/interruptTable.obj"))
+	taskPath := filepath.Join(rootPath, filepath.Join(helper.IncludeLocationUse, "/scheduling.obj"))
 	IncludeHeaders(filePaths, locations)
 
 	locationsDe = append(locationsDe, pkg.Interrupttable, 0)
@@ -92,7 +91,7 @@ func IncludeHeaders(filePaths *[]string, locations *[]uint16) {
 	filepathsDe := *filePaths
 
 	rootPath := helper.GetRootPath()
-	headerPath := rootPath + mcc_constants.GlobalHeaderLocation
+	headerPath := rootPath + helper.GlobalHeaderLocation
 	dir, err := os.ReadDir(headerPath)
 	if err != nil {
 		panic(err.Error())

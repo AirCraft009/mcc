@@ -1,7 +1,7 @@
 // Package assembly
 //
 // Handles Assembling the .asm files into object files
-package assembly
+package assembler
 
 import (
 	"errors"

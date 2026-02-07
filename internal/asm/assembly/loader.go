@@ -1,4 +1,4 @@
-package loader
+package assembly
 
 import (
 	"github.com/AirCraft009/mcc/internal/helper"

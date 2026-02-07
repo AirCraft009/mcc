@@ -1,4 +1,4 @@
-package linker
+package fileHandling
 
 import (
 	"errors"
@@ -8,9 +8,9 @@ import (
 	"sync/atomic"
 
 	"github.com/AirCraft009/mcc"
-	"github.com/AirCraft009/mcc/internal/assembly"
+	loader "github.com/AirCraft009/mcc/internal/asm/assembly"
+	"github.com/AirCraft009/mcc/internal/asm/assembly/assembler"
 	"github.com/AirCraft009/mcc/internal/helper"
-	"github.com/AirCraft009/mcc/internal/loader"
 	"github.com/AirCraft009/mcc/pkg"
 
 	"golang.org/x/sync/errgroup"
@@ -20,12 +20,14 @@ const (
 	ObjectF = iota + 1
 	AsmF
 	HeaderF
+	CSOurceF
 )
 
 var acceptedFiletypes = map[string]byte{
 	".asm": AsmF,
 	".obj": ObjectF,
 	".h":   HeaderF,
+	".c":   CSOurceF,
 }
 
 type Linkables struct {
@@ -171,7 +173,7 @@ func (link *Linkables) formatObjectFiles(outPath string, write bool, logger *log
 			}
 
 		} else {
-			objFile = assembly.AssembleAndWrite(string(file.Data), outPath, write, logger)
+			objFile = assembler.AssembleAndWrite(string(file.Data), outPath, write, logger)
 		}
 
 		// is location already used by another file
