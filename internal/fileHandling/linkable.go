@@ -10,7 +10,6 @@ import (
 	"github.com/AirCraft009/mcc"
 	loader "github.com/AirCraft009/mcc/internal/asm/assembly"
 	"github.com/AirCraft009/mcc/internal/asm/assembly/assembler"
-	"github.com/AirCraft009/mcc/internal/helper"
 	"github.com/AirCraft009/mcc/pkg"
 
 	"golang.org/x/sync/errgroup"
@@ -32,7 +31,6 @@ var acceptedFiletypes = map[string]byte{
 
 type Linkables struct {
 	Files []*LinkFile
-	ptr   uint32
 	size  uint32
 	write bool
 	mutex sync.Mutex
@@ -46,7 +44,7 @@ type LinkFile struct {
 }
 
 func NewLinkables(size int) *Linkables {
-	return &Linkables{make([]*LinkFile, size), 0, 0, true, sync.Mutex{}}
+	return &Linkables{make([]*LinkFile, size), 0, true, sync.Mutex{}}
 }
 
 // AddArraysMultiThreaded
@@ -54,8 +52,6 @@ func NewLinkables(size int) *Linkables {
 func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []uint16, fsHelper *mcc.FSHelper) error {
 	//clears out anything should be empty anyway but who knows
 	link.Files = make([]*LinkFile, len(filePaths))
-	//force it to start adding at 0
-	link.ResetPtr()
 
 	if len(filePaths) != len(locations) {
 		return errors.New("AddArrays did not receive the same number of files and locations")
@@ -85,7 +81,8 @@ func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, in
 	fileT := acceptedFiletypes[ext]
 	if fileT == 0 {
 		//fmt.Println("problem file: ", filePath, index)
-		return errors.New("Unsupported file type: " + ext)
+		log.Printf("Unsupported file type: %s treating as ASM source file\n", ext)
+		fileT = AsmF
 	}
 
 	data, err := fsHelper.ResolveReadFile(filePath)
@@ -94,63 +91,16 @@ func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, in
 	}
 
 	linkF := &LinkFile{Path: filePath, Data: data, FileT: acceptedFiletypes[ext], Location: location}
-	link.mutex.Lock()
 	link.Files[index] = linkF
-	link.ptr++
-	link.size++
-	link.mutex.Unlock()
+	atomic.AddUint32(&link.size, 1)
 
 	return nil
 }
 
-// GetFile
-//
-// file may be nil
-func (link *Linkables) GetFile() (file *LinkFile, nonNil bool) {
-	link.mutex.Lock()
-	if link.ptr == 0 {
-		link.mutex.Unlock()
-		return nil, false
-	}
-	link.ptr = helper.SatSubU32(link.ptr, 1)
-	file = link.Files[link.ptr]
-	link.mutex.Unlock()
-	return file, file != nil
-}
-
-func (link *Linkables) ResetPtr() {
-	atomic.StoreUint32(&link.ptr, 0)
-}
-
-func (link *Linkables) Size() int {
-	return int(atomic.LoadUint32(&link.size))
-}
-
-// SetupDataGathering
-// sets the internal ptr of equal to the size
-// now GetFile can be called until nil is returned and all values will be read correctly
-// write is also set to false so no data can be modified
-func (link *Linkables) SetupDataGathering() {
-	link.mutex.Lock()
-	link.ptr = link.size
-	link.write = false
-	link.mutex.Unlock()
-}
-
-func (link *Linkables) EnableWrite() {
-	link.mutex.Lock()
-	link.write = true
-	link.mutex.Unlock()
-}
-
-func (link *Linkables) DisableWrite() {
-	link.mutex.Lock()
-	link.write = false
-	link.mutex.Unlock()
-}
-
-func (link *Linkables) SetPtr(val uint32) {
-	atomic.StoreUint32(&link.ptr, val)
+func (link *Linkables) GetFiles() []*LinkFile {
+	files := make([]*LinkFile, len(link.Files))
+	copy(files, link.Files)
+	return files
 }
 
 func (link *Linkables) formatObjectFiles(outPath string, write bool, logger *log.Logger) (objectFiles map[*pkg.ObjectFile]uint16, err error) {

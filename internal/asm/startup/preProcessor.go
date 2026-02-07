@@ -24,12 +24,10 @@ func NewPreProcesser() *PreProcesser {
 
 func (pre *PreProcesser) parseDefinitions(linkable *fileHandling.Linkables) {
 	var wg = &sync.WaitGroup{}
-	linkable.SetupDataGathering()
-	linkF, nonNil := linkable.GetFile()
-	for nonNil {
+
+	for _, linkF := range linkable.GetFiles() {
 		if linkF.FileT != fileHandling.HeaderF {
 
-			linkF, nonNil = linkable.GetFile()
 			continue
 		}
 
@@ -39,7 +37,7 @@ func (pre *PreProcesser) parseDefinitions(linkable *fileHandling.Linkables) {
 			defer wg.Done()
 			findDefinitions(l, pre)
 		}(lf)
-		linkF, nonNil = linkable.GetFile()
+
 	}
 	// only terminate after every goroutine is done
 	wg.Wait()
@@ -64,15 +62,12 @@ func findDefinitions(linkF *fileHandling.LinkFile, pre *PreProcesser) {
 }
 
 func (pre *PreProcesser) applyDefinitions(linkable *fileHandling.Linkables) {
-	// parseDefinitions should already have been called
-	linkable.SetupDataGathering()
-	linkF, nonNil := linkable.GetFile()
+
 	var wg = &sync.WaitGroup{}
 
-	for nonNil {
+	for _, linkF := range linkable.GetFiles() {
 
 		if linkF.FileT != fileHandling.AsmF {
-			linkF, nonNil = linkable.GetFile()
 			continue
 		}
 
@@ -83,7 +78,6 @@ func (pre *PreProcesser) applyDefinitions(linkable *fileHandling.Linkables) {
 			replaceDefinitions(l, pre)
 		}(lf)
 
-		linkF, nonNil = linkable.GetFile()
 	}
 	wg.Wait()
 }
