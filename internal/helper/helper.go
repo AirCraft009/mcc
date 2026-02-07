@@ -1,8 +1,6 @@
 package helper
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -79,15 +77,4 @@ func GetRootPath() string {
 
 	// go to mcc.exe/
 	return filepath.Clean(filepath.Join(filepath.Dir(exe), "../"))
-}
-
-func FatalWrapper(logger *log.Logger, msg string) {
-	fmt.Println(msg)
-	fmt.Println("-----")
-	logger.Fatal(msg)
-}
-
-func FatalFWrapper(logger *log.Logger, format string, args ...any) {
-	msg := fmt.Sprintf(format, args...)
-	FatalWrapper(logger, msg)
 }
