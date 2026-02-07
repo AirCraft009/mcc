@@ -1,6 +1,11 @@
 package helper
 
+import (
+	"flag"
+)
+
 type FlagKeeper struct {
+	Flags      *flag.FlagSet
 	InputPath  string
 	OutPath    string
 	NoLink     bool

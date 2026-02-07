@@ -23,13 +23,9 @@ func main() {
 
 	err := flagSet.Parse(os.Args[2:])
 	if err != nil {
-		return
+		panic(err.Error())
 	}
 	fk.InputPath = os.Args[1]
-
-	if fk.OutPath == "" {
-		fmt.Println("Error: OutPath is required")
-	}
 
 	// init the main logger
 	myLogger := helper.InitLogger(fk.Supress, fk.Verbose)
