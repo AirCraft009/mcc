@@ -1,6 +1,7 @@
 package fileHandling
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,7 +92,8 @@ func IncludeHeaders(filePaths *[]string, locations *[]uint16) {
 	filepathsDe := *filePaths
 
 	rootPath := helper.GetRootPath()
-	headerPath := rootPath + helper.GlobalHeaderLocation
+	headerPath := filepath.Join(rootPath, helper.GlobalHeaderLocation)
+	fmt.Println(headerPath)
 	dir, err := os.ReadDir(headerPath)
 	if err != nil {
 		panic(err.Error())
@@ -107,6 +109,7 @@ func IncludeHeaders(filePaths *[]string, locations *[]uint16) {
 		if file.IsDir() {
 			panic("Directory " + file.Name() + " is not a header and shouldn't be in the globalHeaders directory")
 		}
+		fmt.Println("including Header: " + file.Name())
 		filePathsTemp[i+prevlen] = filepath.Join(headerPath, file.Name())
 	}
 

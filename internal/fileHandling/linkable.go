@@ -2,6 +2,7 @@ package fileHandling
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"path/filepath"
 	"sync"
@@ -53,6 +54,13 @@ func (link *Linkables) AddArraysMultiThreaded(filePaths []string, locations []ui
 	//clears out anything should be empty anyway but who knows
 	link.Files = make([]*LinkFile, len(filePaths))
 
+	for _, filePath := range filePaths {
+		if filePath == "" {
+			fmt.Println("Empty file path")
+		}
+		fmt.Printf("Adding %s file\n", filePath)
+	}
+
 	if len(filePaths) != len(locations) {
 		return errors.New("AddArrays did not receive the same number of files and locations")
 	}
@@ -99,7 +107,8 @@ func (link *Linkables) addFileMultiThreaded(filePath string, location uint16, in
 
 func (link *Linkables) GetFiles() []*LinkFile {
 	files := make([]*LinkFile, len(link.Files))
-	copy(files, link.Files)
+	copy(files, link.Files[:link.size])
+	fmt.Println("fileOutput: ", files, len(link.Files))
 	return files
 }
 

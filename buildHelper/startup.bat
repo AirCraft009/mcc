@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-go build -o bin/mcc.exe -v ./Assembler-main
+go build -o bin/mcc.exe -v ./cmd/Assembler.go
 
 set BASEDIR=%~dp0..\
 set MCC=%BASEDIR%bin\mcc.exe
@@ -14,7 +14,7 @@ pushd "%BASEDIR%lib\stdlib\sources"
 
 for %%F in (*.asm) do (
     echo Compiling stdlib %%F
-    "%MCC%" -i "%%F" -o "%BASEDIR%lib\stdlib\obj\%%~nF.obj" -n=true -s=true
+    "%MCC%" "%%F" -o "%BASEDIR%lib\stdlib\obj\%%~nF.obj" -n=true -s=true
 )
 
 popd
@@ -24,7 +24,7 @@ pushd "%BASEDIR%\lib\include\sources"
 
 for %%F in (*.asm) do (
     echo Compiling include %%F
-    "%MCC%" -i "%%F" -o "%BASEDIR%\lib\include\obj\%%~nF.obj" -n=true -s=true
+    "%MCC%" "%%F" -o "%BASEDIR%\lib\include\obj\%%~nF.obj" -n=true -s=true
 )
 
 popd

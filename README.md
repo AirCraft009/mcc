@@ -9,7 +9,16 @@ Neither a compiler nor a collection
 
 ## Usage
 
-- mcc -i inputfile -o Outputfile 
+Usage of mcc:
+    -debug creates debug symbols
+    -n do not use linker
+        overrides debug and res because no full file is created
+    -o string
+        output file (default "a.bin")
+    -res
+        creates the object files at in the dir next to eachother
+    -s doesn't write to a log file at all
+    -v verbose output - log output to stderr
 
 ## Build
 
