@@ -7,25 +7,25 @@ import (
 	"os"
 )
 
-func InitLogger(supress, verbose bool) *log.Logger {
+func InitLogger(supress, verbose, shouldLog bool) *log.Logger {
 	var myLogger *log.Logger
-
-	if !supress {
-		if !verbose {
-			create, err := os.Create("Mcc-Logger.log")
-			if err != nil {
-				return log.New(io.Discard, "", 0)
-			}
-			fmt.Printf("writing logs to: %s\n", create.Name())
-			myLogger = log.New(create, "Mcc-assmbler:", log.LstdFlags|log.Lshortfile)
-
-		} else {
-			myLogger = log.New(os.Stderr, "Mcc-assembler:", log.LstdFlags)
-		}
-
-	} else {
+	if supress {
 		myLogger = log.New(io.Discard, "", 0)
+		return myLogger
 	}
+
+	if shouldLog {
+		create, err := os.Create("Mcc-Logger.log")
+		if err != nil {
+			return log.New(io.Discard, "", 0)
+		}
+		fmt.Printf("writing logs to: %s\n", create.Name())
+		myLogger = log.New(create, "Mcc-assmbler:", log.LstdFlags|log.Lshortfile)
+		return myLogger
+	}
+
+	myLogger = log.New(os.Stderr, "Mcc-assembler:", log.LstdFlags)
+
 	return myLogger
 }
 

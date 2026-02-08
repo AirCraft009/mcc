@@ -86,7 +86,40 @@ func (pre *PreProcesser) Process(linkable *fileHandling.Linkables) {
 
 	pre.parseDefinitions(linkable)
 	pre.applyDefinitions(linkable)
+	pre.removeComments(linkable)
+}
 
+func (pre *PreProcesser) removeComments(linkable *fileHandling.Linkables) {
+	var wg = &sync.WaitGroup{}
+	for _, linkF := range linkable.GetFiles() {
+		// remove # lines even for header files (just makes copy size smaller)
+		if linkF.FileT == fileHandling.ObjectF {
+			continue
+		}
+
+		lfData := &linkF.Data
+		wg.Add(1)
+		go removeCommentsFromFile(lfData, wg)
+	}
+	wg.Wait()
+}
+
+func removeCommentsFromFile(byteData *[]byte, group *sync.WaitGroup) {
+	defer group.Done()
+	data := string(*byteData)
+	builder := &strings.Builder{}
+	for _, line := range strings.Split(data, "\n") {
+		line = strings.TrimSpace(line)
+		commentIndex := strings.Index(line, "#")
+		if commentIndex != -1 {
+			line = line[:commentIndex]
+		}
+		if line != "" {
+			builder.WriteString(line)
+			builder.WriteByte('\n')
+		}
+	}
+	*byteData = []byte(builder.String())
 }
 
 func replaceDefinitions(linkF *fileHandling.LinkFile, pre *PreProcesser) {

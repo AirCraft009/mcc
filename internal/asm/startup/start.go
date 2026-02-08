@@ -6,7 +6,7 @@ import (
 
 	"github.com/AirCraft009/mcc"
 	linker "github.com/AirCraft009/mcc/internal/asm/assembly"
-	fileHandling2 "github.com/AirCraft009/mcc/internal/fileHandling"
+	"github.com/AirCraft009/mcc/internal/fileHandling"
 	"github.com/AirCraft009/mcc/internal/helper"
 )
 
@@ -18,10 +18,10 @@ func NoLinking(inputFile, outPath string, logger *log.Logger) {
 	includes[0] = inputFile
 	fileSysHelper := mcc.InitFSHelper(logger)
 
-	fileHandling2.IncludeHeaders(&includes, &locations)
+	fileHandling.IncludeHeaders(&includes, &locations)
 	logger.Println("collected includes: ", includes)
 
-	link := fileHandling2.NewLinkables(len(includes))
+	link := fileHandling.NewLinkables(len(includes))
 	err := link.AddArraysMultiThreaded(includes, locations, fileSysHelper)
 
 	if err != nil {
@@ -48,7 +48,7 @@ func NormalProcess(inputFile string, logger *log.Logger, debug, resolution bool)
 	logger.Println("finding includes")
 
 	fileSysHelper := mcc.InitFSHelper(logger)
-	includes, locations, err := fileHandling2.FindIncludes(inputFile, fileSysHelper)
+	includes, locations, err := fileHandling.FindIncludes(inputFile, fileSysHelper)
 
 	if err != nil {
 		fileSysHelper.OutputVirtualFS()
@@ -56,7 +56,7 @@ func NormalProcess(inputFile string, logger *log.Logger, debug, resolution bool)
 	}
 	logger.Println("collected includes: ", includes)
 
-	link := fileHandling2.NewLinkables(len(includes))
+	link := fileHandling.NewLinkables(len(includes))
 
 	logger.Println("Adding files to linker")
 	err = link.AddArraysMultiThreaded(includes, locations, fileSysHelper)

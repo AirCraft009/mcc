@@ -39,13 +39,8 @@ func parseLines(data string) [][]string {
 	stringLines := strings.Split(data, "\n")
 	stringParts := make([][]string, len(stringLines))
 	stringPartIndex := 0
-	for index, line := range stringLines {
+	for _, line := range stringLines {
 		line = strings.TrimSpace(line)
-		commentIndex := strings.Index(line, "#")
-		if commentIndex != -1 {
-			line = line[:commentIndex]
-			stringLines[index] = line
-		}
 		if line != "" {
 			lineParts := strings.Fields(line)
 			stringParts[stringPartIndex] = lineParts

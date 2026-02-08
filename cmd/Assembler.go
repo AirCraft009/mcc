@@ -19,7 +19,8 @@ func main() {
 	flagSet.BoolVar(&fk.Debug, "debug", false, "creates debug symbols")
 	flagSet.BoolVar(&fk.Resolution, "res", false, "creates the object files at in the dir next to eachother")
 	flagSet.BoolVar(&fk.Verbose, "v", false, "verbose output")
-	flagSet.BoolVar(&fk.Supress, "s", false, "doesn't write to a log file at all - log output to stderr")
+	flagSet.BoolVar(&fk.Log, "log", false, "writes to a log file")
+	flagSet.BoolVar(&fk.Supress, "s", true, "doesn't write to a log file at all - log output to stderr")
 
 	err := flagSet.Parse(os.Args[2:])
 	if err != nil {
@@ -28,7 +29,7 @@ func main() {
 	fk.InputPath = os.Args[1]
 
 	// init the main logger
-	myLogger := helper.InitLogger(fk.Supress, fk.Verbose)
+	myLogger := helper.InitLogger(fk.Supress, fk.Verbose, fk.Log)
 
 	myLogger.Printf("Compiling %s to %s\n", fk.InputPath, fk.OutPath)
 	if fk.NoLink {
