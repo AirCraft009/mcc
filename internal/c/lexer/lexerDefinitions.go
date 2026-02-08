@@ -4,6 +4,26 @@ import (
 	"unicode"
 )
 
+type Lexer struct {
+	size   uint64
+	Tokens *Token
+	// Abstract syntax Tree
+}
+
+type Token struct {
+	TType TokenType
+	lex   string
+	next  *Token
+}
+
+func NewToken(lex string, ttype TokenType) *Token {
+	return &Token{
+		lex:   lex,
+		TType: ttype,
+		next:  nil,
+	}
+}
+
 type TokenType int
 
 const (
@@ -84,6 +104,8 @@ const (
 	TYPEDEF
 	UNION
 	VOID
+
+	IDENTIFIER
 )
 
 var keywordMap = map[string]TokenType{
@@ -122,41 +144,45 @@ var keywordMap = map[string]TokenType{
 	"null":     NULL,
 }
 
-func getDelim(str string) (TokenType, bool) {
-	switch str {
-	case " ":
+func GetDelim(str string) (TokenType, bool) {
+	if len(str) == 0 {
+		return ILLEGAL, false
+	}
+	ch := str[0]
+	switch ch {
+	case ' ':
 		return SPACE, true
-	case "+":
+	case '+':
 		return PLUS, true
-	case "-":
+	case '-':
 		return MINUS, true
-	case "/":
+	case '/':
 		return SLASH, true
-	case "*":
+	case '*':
 		return STAR, true
-	case ",":
+	case ',':
 		return COMMA, true
-	case ";":
+	case ';':
 		return SEMICOLON, true
-	case "(":
+	case '(':
 		return LPAREN, true
-	case ")":
+	case ')':
 		return RPAREN, true
-	case "{":
+	case '{':
 		return LBRACE, true
-	case "}":
+	case '}':
 		return RBRACE, true
-	case "[":
+	case '[':
 		return LBRACKET, true
-	case "]":
+	case ']':
 		return RBRACKET, true
-	case "%":
+	case '%':
 		return PERCENT, true
-	case "<":
+	case '<':
 		return LT, true
-	case ">":
+	case '>':
 		return GT, true
-	case "=":
+	case '=':
 		return ASSIGN, true
 	default:
 		return ILLEGAL, false
@@ -213,9 +239,32 @@ func getOperator(str string) (TokenType, bool) {
 	}
 }
 
-func isValidVarName(str string) bool {
+func isValidIdentifier(str string) bool {
+	if len(str) == 0 {
+		return false
+	}
 	return unicode.IsLetter(rune(str[0]))
 }
 
-func isKeyword(str string) bool {
+func getTokenType(str string) TokenType {
+	keyw, ok := keywordMap[str]
+	if ok {
+		return keyw
+	}
+
+	delim, ok := GetDelim(str)
+	if ok {
+		return delim
+	}
+
+	op, ok := getOperator(str)
+	if ok {
+		return op
+	}
+
+	if !isValidIdentifier(str) {
+		return ILLEGAL
+	}
+
+	return IDENTIFIER
 }
