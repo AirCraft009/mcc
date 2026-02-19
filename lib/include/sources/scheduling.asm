@@ -3,7 +3,7 @@
 #Task len = 9149 buffer bit of 1'st task
 #Task End = 9628
 #Tasksize = 60 bytes
-#Per-task stack size = 910 bytes
+#Per-task stack Size = 910 bytes
 #Max tasks = 9
 #Interrupt Table = 	23965
 

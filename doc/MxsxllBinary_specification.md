@@ -13,7 +13,7 @@
 
 ### Format
 
-| byte                 | size          | name          | description                                                         |
+| byte                 | Size          | name          | description                                                         |
 |----------------------|---------------|---------------|---------------------------------------------------------------------|
 | 0                    | 4B            | Header        | MXBO(MxsxllBinary Header - object)                                  |
 | 4                    | 2B            | code-len      | lenght of the code                                                  |

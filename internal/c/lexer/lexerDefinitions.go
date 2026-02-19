@@ -1,22 +1,26 @@
 package lexer
 
 import (
+	"errors"
+	"strconv"
 	"unicode"
+
+	def "github.com/AirCraft009/mcc/internal/c"
 )
 
 type Lexer struct {
-	size   uint64
+	Size   uint64
+	Pos    int
 	Tokens *Token
-	// Abstract syntax Tree
 }
 
 type Token struct {
-	TType TokenType
+	TType def.TokenType
 	lex   string
 	next  *Token
 }
 
-func NewToken(lex string, ttype TokenType) *Token {
+func NewToken(lex string, ttype def.TokenType) *Token {
 	return &Token{
 		lex:   lex,
 		TType: ttype,
@@ -24,218 +28,138 @@ func NewToken(lex string, ttype TokenType) *Token {
 	}
 }
 
-type TokenType int
-
-const (
-	// Special
-	ILLEGAL TokenType = iota
-	EOF
-	IDENT
-	INT
-	FLOAT
-	DOUBLE
-	CHAR
-
-	// Keywords
-	IF
-	ELSE
-	FOR
-	WHILE
-	DO
-	SWITCH
-	CASE
-	DEFAULT
-	BREAK
-	CONTINUE
-	RETURN
-	CONST
-	STRUCT
-	ENUM
-	STATIC
-	EXTERN
-	INLINE
-	TRUE
-	FALSE
-	NULL
-
-	// Operators
-	ASSIGN    // =
-	PLUS      // +
-	MINUS     // -
-	STAR      // *
-	SLASH     // /
-	PERCENT   // %
-	INCREMENT // ++
-	DECREMENT // --
-	EQ        // ==
-	NEQ       // !=
-	LT        // <
-	GT        // >
-	LTE       // <=
-	GTE       // >=
-	AND       // &&
-	OR        // ||
-	NOT       // !
-	BIT_AND   // &
-	BIT_OR    // |
-	BIT_XOR   // ^
-	BIT_NOT   // ~
-	SHL       // <<
-	SHR       // >>
-
-	// Delimiters
-	LPAREN    // (
-	RPAREN    // )
-	LBRACE    // {
-	RBRACE    // }
-	LBRACKET  // [
-	RBRACKET  // ]
-	COMMA     // ,
-	SEMICOLON // ;
-	SPACE
-
-	// forgot
-	VOLATILE
-	GOTO
-	SHORT
-	UNSIGNED
-	SIGNED
-	SIZEOF
-	TYPEDEF
-	UNION
-	VOID
-
-	IDENTIFIER
-)
-
-var keywordMap = map[string]TokenType{
-	"break":    BREAK,
-	"case":     CASE,
-	"char":     CHAR,
-	"const":    CONST,
-	"continue": CONTINUE,
-	"default":  DEFAULT,
-	"do":       DO,
-	"double":   DOUBLE,
-	"else":     ELSE,
-	"enum":     ENUM,
-	"extern":   EXTERN,
-	"float":    FLOAT,
-	"for":      FOR,
-	"goto":     GOTO,
-	"if":       IF,
-	"inline":   INLINE,
-	"int":      INT,
-	"return":   RETURN,
-	"short":    SHORT,
-	"signed":   SIGNED,
-	"sizeof":   SIZEOF,
-	"static":   STATIC,
-	"struct":   STRUCT,
-	"switch":   SWITCH,
-	"typedef":  TYPEDEF,
-	"union":    UNION,
-	"unsigned": UNSIGNED,
-	"void":     VOID,
-	"volatile": VOLATILE,
-	"while":    WHILE,
-	"true":     TRUE,
-	"false":    FALSE,
-	"null":     NULL,
+var keywordMap = map[string]def.TokenType{
+	"break":    def.BREAK,
+	"case":     def.CASE,
+	"char":     def.CHAR,
+	"const":    def.CONST,
+	"continue": def.CONTINUE,
+	"default":  def.DEFAULT,
+	"do":       def.DO,
+	"double":   def.DOUBLE,
+	"else":     def.ELSE,
+	"enum":     def.ENUM,
+	"extern":   def.EXTERN,
+	"float":    def.FLOAT,
+	"for":      def.FOR,
+	"goto":     def.GOTO,
+	"if":       def.IF,
+	"inline":   def.INLINE,
+	"int":      def.INT,
+	"return":   def.RETURN,
+	"short":    def.SHORT,
+	"signed":   def.SIGNED,
+	"sizeof":   def.SIZEOF,
+	"static":   def.STATIC,
+	"struct":   def.STRUCT,
+	"switch":   def.SWITCH,
+	"typedef":  def.TYPEDEF,
+	"union":    def.UNION,
+	"unsigned": def.UNSIGNED,
+	"void":     def.VOID,
+	"volatile": def.VOLATILE,
+	"while":    def.WHILE,
+	"true":     def.TRUE,
+	"false":    def.FALSE,
+	"null":     def.NULL,
 }
 
-func GetDelim(str string) (TokenType, bool) {
-	if len(str) == 0 {
-		return ILLEGAL, false
-	}
-	ch := str[0]
+func getDelim(ch byte) (def.TokenType, bool) {
 	switch ch {
 	case ' ':
-		return SPACE, true
+		return def.SPACE, true
 	case '+':
-		return PLUS, true
+		return def.PLUS, true
 	case '-':
-		return MINUS, true
+		return def.MINUS, true
 	case '/':
-		return SLASH, true
+		return def.SLASH, true
 	case '*':
-		return STAR, true
+		return def.STAR, true
 	case ',':
-		return COMMA, true
+		return def.COMMA, true
 	case ';':
-		return SEMICOLON, true
+		return def.SEMICOLON, true
 	case '(':
-		return LPAREN, true
+		return def.LPAREN, true
 	case ')':
-		return RPAREN, true
+		return def.RPAREN, true
 	case '{':
-		return LBRACE, true
+		return def.LBRACE, true
 	case '}':
-		return RBRACE, true
+		return def.RBRACE, true
 	case '[':
-		return LBRACKET, true
+		return def.LBRACKET, true
 	case ']':
-		return RBRACKET, true
+		return def.RBRACKET, true
 	case '%':
-		return PERCENT, true
+		return def.PERCENT, true
 	case '<':
-		return LT, true
+		return def.LT, true
 	case '>':
-		return GT, true
+		return def.GT, true
 	case '=':
-		return ASSIGN, true
+		return def.ASSIGN, true
 	default:
-		return ILLEGAL, false
+		return def.ILLEGAL, false
 	}
 }
 
-func getOperator(str string) (TokenType, bool) {
+func getOperator(str string) (def.TokenType, bool) {
 	switch str {
 	case "+":
-		return PLUS, true
+		return def.PLUS, true
 	case "-":
-		return MINUS, true
+		return def.MINUS, true
 	case "*":
-		return STAR, true
+		return def.STAR, true
 	case "/":
-		return SLASH, true
+		return def.SLASH, true
 	case "<":
-		return LT, true
+		return def.LT, true
 	case ">":
-		return GT, true
+		return def.GT, true
 	case "=":
-		return EQ, true
+		return def.EQ, true
+	case "+=":
+		return def.PLUSEQ, true
+	case "-=":
+		return def.MINUSEQ, true
+	case "*=":
+		return def.MULEQ, true
+	case "/=":
+		return def.DIVEQ, true
 	case "++":
-		return INCREMENT, true
+		return def.INCREMENT, true
 	case "--":
-		return DECREMENT, true
+		return def.DECREMENT, true
 	case "!=":
-		return NEQ, true
+		return def.NEQ, true
 	case "<=":
-		return LTE, true
+		return def.LTE, true
 	case ">=":
-		return GTE, true
+		return def.GTE, true
 	case "&&":
-		return AND, true
+		return def.AND, true
 	case "||":
-		return OR, true
+		return def.OR, true
 	case "<<":
-		return SHL, true
+		return def.SHL, true
 	case ">>":
-		return SHR, true
+		return def.SHR, true
 	case "!":
-		return NOT, true
+		return def.NOT, true
 	case "&":
-		return BIT_AND, true
+		return def.BIT_AND, true
 	case "|":
-		return BIT_OR, true
+		return def.BIT_OR, true
 	case "^":
-		return BIT_XOR, true
+		return def.BIT_XOR, true
 	case "~":
-		return BIT_NOT, true
+		return def.BIT_NOT, true
 
 	default:
-		return ILLEGAL, false
+		return def.ILLEGAL, false
 	}
 }
 
@@ -246,25 +170,26 @@ func isValidIdentifier(str string) bool {
 	return unicode.IsLetter(rune(str[0]))
 }
 
-func getTokenType(str string) TokenType {
-	keyw, ok := keywordMap[str]
-	if ok {
-		return keyw
+func standardizeSpaces(r byte) byte {
+	if unicode.IsSpace(rune(r)) {
+		return ' '
 	}
 
-	delim, ok := GetDelim(str)
-	if ok {
-		return delim
+	return r
+}
+
+func checkIdentifier(s string) (def.TokenType, error) {
+	if len(s) == 0 {
+		return def.ILLEGAL, errors.New("identifier is empty")
+	}
+	fc := s[0] - '0'
+	if fc < 10 {
+		_, err := strconv.Atoi(s)
+		if err != nil {
+			return 0, err
+		}
+		return def.CONSTINT, nil
 	}
 
-	op, ok := getOperator(str)
-	if ok {
-		return op
-	}
-
-	if !isValidIdentifier(str) {
-		return ILLEGAL
-	}
-
-	return IDENTIFIER
+	return def.IDENT, nil
 }

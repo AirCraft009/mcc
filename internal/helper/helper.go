@@ -3,6 +3,7 @@ package helper
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func EncodeRegs(rx byte, ry byte, addrnecs bool) (byte, byte) {
@@ -77,4 +78,26 @@ func GetRootPath() string {
 
 	// go to mcc.exe/
 	return filepath.Clean(filepath.Join(filepath.Dir(exe), "../"))
+}
+
+func IsLetter(r byte) bool {
+	return r >= 'a' && r <= 'z'
+}
+
+func IsDigit(r byte) bool {
+	return r >= '0' && r <= '9'
+}
+
+func Clamp(val, min, max int) int {
+	if val < min {
+		return min
+	}
+	if val > max {
+		return max
+	}
+	return val
+}
+
+func StandardizeSpaceAmmount(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }

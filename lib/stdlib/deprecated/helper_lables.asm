@@ -36,7 +36,7 @@ _get_split_stack_size:
     RET
 
 _get_task_size:
-    MOVI T6 61      # task-size is actually 60 but 61 is returned to make the calculations easier
+    MOVI T6 61      # task-Size is actually 60 but 61 is returned to make the calculations easier
     RET
 
 

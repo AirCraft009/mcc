@@ -63,7 +63,7 @@ _alloc:                      # O2 is the ammount O1 will be the start
         MULI O3 16      # multiply with blocksize to get offset from heapstart in bytes
         MOVI O6 writeable_heap
         ADD O3 O6       # Add start of actually writeable heap. to get a ptr to the start
-        STOREW O2 O3    # write the size to the first to bytes
+        STOREW O2 O3    # write the Size to the first to bytes
         MOV O1 O3
         ADDI O1 2       # Add the offset two bytes to the final addr
         RET
