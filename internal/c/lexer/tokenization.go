@@ -18,7 +18,7 @@ func (lex *Lexer) Push(lexme string, Ttype c.TokenType) {
 //
 // change the value of the topmost token
 func (lex *Lexer) Mod(lexme string, Ttype c.TokenType) {
-	lex.Tokens.lex = lexme
+	lex.Tokens.Lex = lexme
 	lex.Tokens.TType = Ttype
 }
 
@@ -160,7 +160,7 @@ func (lex *Lexer) Output() {
 
 	pos := lex.Size - 1
 	for token != nil {
-		outStr[pos] = fmt.Sprintf("%d=[%s: type %d]\n", pos, token.lex, token.TType)
+		outStr[pos] = fmt.Sprintf("%d=[%s: type %s]\n", pos, token.Lex, token.TType)
 		token = token.next
 		pos--
 	}
@@ -169,11 +169,11 @@ func (lex *Lexer) Output() {
 }
 
 func (lex *Lexer) ReturnTokens() []*Token {
-	tokens := make([]*Token, 0, lex.Size)
-	var pos int = int(lex.Size)
-	for token := lex.Tokens; token != nil; token = lex.Tokens {
-		pos--
+	tokens := make([]*Token, lex.Size)
+	var pos int = int(lex.Size) - 1
+	for token := lex.Tokens; token != nil; token = token.next {
 		tokens[pos] = token
+		pos--
 	}
 	return tokens
 }
