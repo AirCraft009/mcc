@@ -2,6 +2,7 @@ package c
 
 type TokenType int
 
+//go:generate stringer -type=TokenType
 const (
 	// Special
 	ILLEGAL TokenType = iota
