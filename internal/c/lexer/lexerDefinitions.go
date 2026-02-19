@@ -16,13 +16,13 @@ type Lexer struct {
 
 type Token struct {
 	TType def.TokenType
-	lex   string
+	Lex   string
 	next  *Token
 }
 
 func NewToken(lex string, ttype def.TokenType) *Token {
 	return &Token{
-		lex:   lex,
+		Lex:   lex,
 		TType: ttype,
 		next:  nil,
 	}
