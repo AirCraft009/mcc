@@ -121,7 +121,7 @@ func (lex *Lexer) Parse(data string) error {
 		// DOUBLE CHAR OP
 		if i+1 < len(data) {
 			op := data[i : i+2]
-			if t, ok := getOperator(op); ok {
+			if t, ok := GetOperator(op); ok {
 				lex.AddToken(op, t, i+2)
 				i += 2
 				continue
@@ -129,14 +129,14 @@ func (lex *Lexer) Parse(data string) error {
 		}
 
 		//SINGLE CHAR OP
-		if t, ok := getOperator(string(ch)); ok {
+		if t, ok := GetOperator(string(ch)); ok {
 			lex.AddToken(string(ch), t, i+1)
 			i++
 			continue
 		}
 
 		// DELIMITER
-		if t, ok := getDelim(ch); ok {
+		if t, ok := GetDelim(ch); ok {
 			lex.AddToken(string(ch), t, i+1)
 			i++
 			continue

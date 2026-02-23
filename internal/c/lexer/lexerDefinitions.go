@@ -64,7 +64,7 @@ var keywordMap = map[string]def.TokenType{
 	"null":     def.NULL,
 }
 
-func getDelim(ch byte) (def.TokenType, bool) {
+func GetDelim(ch byte) (def.TokenType, bool) {
 	switch ch {
 	case ' ':
 		return def.SPACE, true
@@ -105,7 +105,7 @@ func getDelim(ch byte) (def.TokenType, bool) {
 	}
 }
 
-func getOperator(str string) (def.TokenType, bool) {
+func GetOperator(str string) (def.TokenType, bool) {
 	switch str {
 	case "+":
 		return def.PLUS, true

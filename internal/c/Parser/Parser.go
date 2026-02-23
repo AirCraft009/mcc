@@ -1,140 +1,55 @@
 package Parser
 
 import (
-	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/AirCraft009/mcc/internal/c"
 	"github.com/AirCraft009/mcc/internal/c/lexer"
 )
 
-// Statements
-// Abstract Syntax Tree
+//
+// AST INTERFACES
+//
+
 type Statements interface {
-	parseSelf(data []*lexer.Token) error
 	String() string
 }
+
+//
+// AST NODES
+//
 
 type FuncDecl struct {
 	FuncName string
 	FuncArgs []Statements
 	RetType  string
-}
-
-// ParseSelf
-// after a type ident(
-// but data is passed starting at -> type
-func (f *FuncDecl) ParseSelf(data []*lexer.Token) error {
-	// following is either
-	// a type if the func has params
-	// a RParen if it doesn't
-	f.FuncArgs = make([]Statements, 0, 3)
-
-	f.RetType = data[0].Lex
-	f.FuncName = data[1].Lex
-
-	// cutoff the RPAREN
-	data = data[3:]
-	for i := 0; i < len(data); i++ {
-		token := data[i]
-		if token.TType == c.RPAREN {
-			break
-		}
-
-		// delim between two vars
-		if token.TType == c.COMMA {
-			continue
-		}
-
-		// handle a var
-		// first char hast to be a datatype
-		f.FuncArgs = append(
-			f.FuncArgs, &ArgVariable{
-				varType: data[i].Lex,
-				name:    data[i+1].Lex,
-			})
-		// add one extra because I used i + 1 for the name
-		i++
-	}
-	return nil
+	Body     *Body
 }
 
 func (f *FuncDecl) String() string {
-	return fmt.Sprintf("%s %s(%s)", f.FuncName, f.RetType, f.FuncArgs)
+	return fmt.Sprintf("FuncDecl(%s %s %v %s)",
+		f.RetType,
+		f.FuncName,
+		f.FuncArgs,
+		f.Body)
 }
-
-/*
-
-SNIPPET:
-
-	data = data[i+1:]
-	if data[0].TType != c.LBRACE {
-		// function definitions do the same
-		// may change in the future
-
-		return errors.New("function declaration without left brace")
-	}
-*/
 
 type Body struct {
 	Blocks []Statements
 }
 
-func (b *Body) ParseSelf(data []*lexer.Token) error {
-	b.Blocks = make([]Statements, 0, 10)
-
-	for i := 0; i < len(data); i++ {
-		token := data[i]
-
-		if token.TType == c.RBRACE {
-			// body finished
-			return nil
-		}
-
-		if token.TType == c.IF {
-			cond := new(ifCondition)
-			err := cond.parseSelf(data[i:])
-			if err != nil {
-				return err
-			}
-		}
-
-		// check for function calls
-		if token.TType == c.IDENT {
-			// one char for the IDENT
-			// one char for the RBRACE
-			if i >= len(data)-2 {
-				return errors.New("function body can contain a lone Identifier")
-			}
-
-			// check for method call
-			// name(
-			if data[i+1].TType == c.LPAREN {
-				call := new(methodCall)
-				err := call.parseSelf(data[i:])
-				if err != nil {
-					return err
-				}
-
-				b.Blocks = append(b.Blocks, call)
-			}
-		}
-	}
-	return errors.New("unterminated function body")
+func (b *Body) String() string {
+	return fmt.Sprintf("{ %v }", b.Blocks)
 }
 
-type ifCondition struct {
-	expr   Statements
-	ifBody []Statements
+type ArgVariable struct {
+	varType string
+	name    string
 }
 
-func (i *ifCondition) parseSelf(data []*lexer.Token) error {
-	//TODO: implement me
-	return nil
-}
-
-func (i *ifCondition) String() string {
-	return fmt.Sprintf("ifCondition<%s>", i.expr)
+func (v *ArgVariable) String() string {
+	return fmt.Sprintf("%s %s", v.varType, v.name)
 }
 
 type methodCall struct {
@@ -142,127 +57,437 @@ type methodCall struct {
 	args []Statements
 }
 
-func (m *methodCall) parseSelf(data []*lexer.Token) error {
-	// name(args)
-	m.args = make([]Statements, 0, 3)
-	m.name = data[0].Lex
-	data = data[2:]
-
-	for i := 0; i < len(data); i++ {
-		token := data[i]
-
-		// successfully parsed all args
-		if token.TType == c.RPAREN {
-			return nil
-		}
-
-		// skip commas
-		if token.TType == c.COMMA {
-			continue
-		}
-
-		m.args = append(m.args,
-			&refVar{
-				name: token.Lex,
-			})
-
-	}
-	return errors.New("unterminated function call")
-}
-
 func (m *methodCall) String() string {
-	return fmt.Sprintf("%s(%s)", m.name, m.args)
+	return fmt.Sprintf("%s(%v)", m.name, m.args)
 }
 
-// refVar
-//
-// reference variable for example in func calls
-// add(refVar, refVar)
 type refVar struct {
 	name string
 }
 
-func (r *refVar) parseSelf(data []*lexer.Token) error {
-	return nil
-}
-
 func (r *refVar) String() string {
-	return fmt.Sprintf("refVar=%s", r.name)
-}
-
-// ArgVariable
-//
-// var that is in function definitions
-// int main(ArgVariable, ArgVariable)
-type ArgVariable struct {
-	varType string
-	name    string
-}
-
-// not necesarry it's easier to just set the values explicitly
-func (v *ArgVariable) parseSelf(data []*lexer.Token) error {
-	return nil
-}
-
-func (v *ArgVariable) String() string {
-	return fmt.Sprintf("%s(%s)", v.name, v.varType)
+	return r.name
 }
 
 type returnStmt struct {
 	retExpr Statements
 }
 
-func (ret *returnStmt) parseSelf(data []*lexer.Token) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (ret *returnStmt) String() string {
-	return fmt.Sprintf("return %s", ret.retExpr)
+func (r *returnStmt) String() string {
+	return fmt.Sprintf("return %s;", r.retExpr)
 }
 
 type OpExpr struct {
-	Left, Right Statements
-	Op          c.TokenType
+	Left  Statements
+	Right Statements
+	Op    c.TokenType
 }
 
-func (opE *OpExpr) parseSelf(data []*lexer.Token) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (opE *OpExpr) String() string {
-	return fmt.Sprintf("%s %s %s)", opE.Right, opE.Op, opE.Left.String())
+func (o *OpExpr) String() string {
+	return fmt.Sprintf("(%s %v %s)", o.Left, o.Op, o.Right)
 }
 
 type IntegerLit struct {
-	Value int16
+	Value int64
 }
 
-func (lit *IntegerLit) parseSelf(data []*lexer.Token) error {
-	//TODO implement me
-	panic("implement me")
+func (i *IntegerLit) String() string {
+	return fmt.Sprintf("%d", i.Value)
 }
-
-func (lit *IntegerLit) String() string {
-	return fmt.Sprintf("%d", lit.Value)
-}
-
-// type FloatLit struct{}
 
 type StringLit struct {
 	Value string
 }
 
-func (lit *StringLit) parseSelf(data []*lexer.Token) error {
-	//TODO implement me
-	panic("implement me")
+func (s *StringLit) String() string {
+	return fmt.Sprintf("\"%s\"", s.Value)
 }
 
-func (lit *StringLit) String() string {
-	return fmt.Sprintf("\"%s\"", lit.Value)
-}
+//
+// PARSER
+//
 
 type Parser struct {
-	AST *Statements
+	tokens []*lexer.Token
+	pos    int
+}
+
+func NewParser(tokens []*lexer.Token) *Parser {
+	return &Parser{
+		tokens: tokens,
+		pos:    0,
+	}
+}
+
+//
+// TOKEN HELPERS
+//
+
+func (p *Parser) current() *lexer.Token {
+	if p.pos >= len(p.tokens) {
+		return nil
+	}
+	return p.tokens[p.pos]
+}
+
+func (p *Parser) advance() *lexer.Token {
+	tok := p.current()
+	p.pos++
+	return tok
+}
+
+func (p *Parser) match(tt c.TokenType) bool {
+	if p.current() != nil && p.current().TType == tt {
+		p.pos++
+		return true
+	}
+	return false
+}
+
+func (p *Parser) expect(tt c.TokenType) (*lexer.Token, error) {
+
+	tok := p.current()
+
+	if tok == nil {
+		return nil, fmt.Errorf("unexpected EOF, expected %v", tt)
+	}
+
+	if tok.TType != tt {
+		return nil, fmt.Errorf("expected %v got %v", tt, tok.TType)
+	}
+
+	p.pos++
+	return tok, nil
+}
+
+func (p *Parser) expectType() (*lexer.Token, error) {
+
+	tok := p.current()
+
+	if tok == nil {
+		return nil, fmt.Errorf("unexpected EOF, expected type")
+	}
+
+	if tok.TType >= c.ASSIGN && tok.TType >= c.SPACE {
+		return nil, fmt.Errorf("expected type got delim: %v", tok.TType)
+	}
+
+	// just takes anything
+
+	p.pos++
+	return tok, nil
+}
+
+//
+// TOP LEVEL
+//
+
+func (p *Parser) Parse() ([]Statements, error) {
+
+	var nodes []Statements
+
+	for p.current() != nil {
+
+		fn, err := p.parseFuncDecl()
+		if err != nil {
+			return nil, err
+		}
+
+		nodes = append(nodes, fn)
+	}
+
+	return nodes, nil
+}
+
+//
+// FUNCTION DECL
+//
+
+func (p *Parser) parseFuncDecl() (*FuncDecl, error) {
+
+	retTypeTok, err := p.expectType()
+	if err != nil {
+		return nil, err
+	}
+
+	nameTok, err := p.expect(c.IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.expect(c.LPAREN)
+	if err != nil {
+		return nil, err
+	}
+
+	fn := &FuncDecl{
+		RetType:  retTypeTok.Lex,
+		FuncName: nameTok.Lex,
+		FuncArgs: []Statements{},
+	}
+
+	for !p.match(c.RPAREN) {
+
+		typeTok, err := p.expectType()
+		if err != nil {
+			return nil, err
+		}
+
+		nameTok, err := p.expect(c.IDENT)
+		if err != nil {
+			return nil, err
+		}
+
+		fn.FuncArgs = append(fn.FuncArgs,
+			&ArgVariable{
+				varType: typeTok.Lex,
+				name:    nameTok.Lex,
+			})
+
+		p.match(c.COMMA)
+	}
+
+	body, err := p.parseBody()
+	if err != nil {
+		return nil, err
+	}
+
+	fn.Body = body
+
+	return fn, nil
+}
+
+//
+// BODY
+//
+
+func (p *Parser) parseBody() (*Body, error) {
+
+	_, err := p.expect(c.LBRACE)
+	if err != nil {
+		return nil, err
+	}
+
+	body := &Body{
+		Blocks: []Statements{},
+	}
+
+	for !p.match(c.RBRACE) {
+
+		stmt, err := p.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+
+		body.Blocks = append(body.Blocks, stmt)
+	}
+
+	return body, nil
+}
+
+//
+// STATEMENT
+//
+
+func (p *Parser) parseStatement() (Statements, error) {
+
+	tok := p.current()
+
+	if tok == nil {
+		return nil, fmt.Errorf("unexpected EOF")
+	}
+
+	switch tok.TType {
+
+	case c.RETURN:
+		return p.parseReturn()
+
+	case c.IDENT:
+
+		// ensure this is actually a function call
+		if p.pos+1 >= len(p.tokens) || p.tokens[p.pos+1].TType != c.LPAREN {
+			return nil, fmt.Errorf(
+				"unexpected identifier '%s', expected function call",
+				tok.Lex,
+			)
+		}
+
+		call, err := p.parseMethodCall()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.expect(c.SEMICOLON)
+		if err != nil {
+			return nil, err
+		}
+
+		return call, nil
+
+	case c.INT, c.SHORT, c.CHAR:
+
+	}
+	return nil, fmt.Errorf("unexpected token %v", tok.TType)
+}
+
+//
+// RETURN
+//
+
+func (p *Parser) parseReturn() (*returnStmt, error) {
+
+	p.advance()
+
+	expr, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.expect(c.SEMICOLON)
+	if err != nil {
+		return nil, err
+	}
+
+	return &returnStmt{
+		retExpr: expr,
+	}, nil
+}
+
+//
+// METHOD CALL
+//
+
+func (p *Parser) parseMethodCall() (*methodCall, error) {
+
+	nameTok, err := p.expect(c.IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.expect(c.LPAREN)
+	if err != nil {
+		return nil, err
+	}
+
+	call := &methodCall{
+		name: nameTok.Lex,
+		args: []Statements{},
+	}
+
+	for !p.match(c.RPAREN) {
+
+		expr, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		call.args = append(call.args, expr)
+
+		p.match(c.COMMA)
+	}
+
+	return call, nil
+}
+
+//
+// EXPRESSIONS
+//
+
+func (p *Parser) parseExpression() (Statements, error) {
+	return p.parseBinary()
+}
+
+func (p *Parser) parseBinary() (Statements, error) {
+
+	left, err := p.parsePrimary()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+
+		tok := p.current()
+		if tok == nil {
+			break
+		}
+
+		switch tok.TType {
+
+		case c.PLUS, c.MINUS, c.STAR, c.SLASH:
+
+			op := tok.TType
+			p.advance()
+
+			right, err := p.parsePrimary()
+			if err != nil {
+				return nil, err
+			}
+
+			left = &OpExpr{
+				Left:  left,
+				Right: right,
+				Op:    op,
+			}
+
+		default:
+			return left, nil
+		}
+	}
+
+	return left, nil
+}
+
+func (p *Parser) parsePrimary() (Statements, error) {
+
+	tok := p.current()
+
+	switch tok.TType {
+
+	case c.INT:
+
+		p.advance()
+
+		val, err := strconv.ParseInt(tok.Lex, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		return &IntegerLit{
+			Value: val,
+		}, nil
+
+	case c.STRING:
+
+		p.advance()
+
+		return &StringLit{
+			Value: tok.Lex,
+		}, nil
+
+	case c.IDENT:
+
+		if p.tokens[p.pos+1].TType == c.LPAREN {
+			return p.parseMethodCall()
+		}
+
+		p.advance()
+
+		return &refVar{
+			name: tok.Lex,
+		}, nil
+
+	case c.LPAREN:
+
+		p.advance()
+
+		expr, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.expect(c.RPAREN)
+		return expr, err
+	}
+
+	return nil, fmt.Errorf("unexpected token %v", tok.TType)
 }

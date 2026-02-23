@@ -34,17 +34,10 @@ func main() {
 	}
 
 	tokens := lexen.ReturnTokens()
-
-	decl := new(Parser.FuncDecl)
-	decl.ParseSelf(tokens)
-	fmt.Println(decl.FuncName)
-	fmt.Println(decl.FuncArgs)
-	fmt.Println(decl.RetType)
-
-	fmt.Println("parsing body")
-	fmt.Println(tokens[6].Lex)
-
-	bdy := new(Parser.Body)
-	bdy.ParseSelf(lexen.ReturnTokens()[6:])
-	fmt.Println(bdy.Blocks)
+	parse := Parser.NewParser(tokens)
+	statements, err := parse.Parse()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%+v\n", statements)
 }
