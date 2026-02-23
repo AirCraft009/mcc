@@ -339,9 +339,7 @@ _spawn:         # creates a task and saves it
 
     ADDI T5 2                   # set- up Stack
     MOVI T1 split_stack_size
-    CALL get_task_len
-    SUBI T6 1
-    MUL T1 T6
+    MUL T1 T5
     MOVI T6 stack_start
     SUB T6 T1
     STOREW T6 T5
